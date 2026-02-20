@@ -5,7 +5,6 @@
 #ifndef SPACEMACHINE_SPACEMACHINE_HPP
 #define SPACEMACHINE_SPACEMACHINE_HPP
 
-#include <algorithm>
 #include <cstdint>
 #include <functional>
 #include <stdexcept>
@@ -16,11 +15,33 @@ namespace SpaceMachine {
 
 template<size_t, size_t> class StateMachineBuilder;
 
-template<size_t MaxNumStates = 24, size_t MaxNumTransitions = 100>
+constexpr std::size_t STATE_SIZE = sizeof(std::function<void()>);
+constexpr std::size_t TRANSITION_SIZE = sizeof(std::function<bool()>);
+constexpr std::size_t TRANSITION_RATIO = 4;
+// We want to guarantee an average of 4 Transitions per State
+// MaxNumTransitions >= TRANSITION_RATIO * MaxNumStates
+// We also want to guarantee the default StateMachine takes up no more than 4KiB
+// sizeof(StateMachine<>) = 3 + (STATE_SIZE + 1) * MaxNumStates
+//                          + (TRANSITION_SIZE + 1) * MaxNumTransitions
+// Maximizing the quantity (MaxNumStates + MaxNumTransitions) yields:
+// MaxNumStates = floor(4093 /
+//              ((1 + STATE_SIZE) + TRANSITION_RATIO * (1 + TRANSITION_SIZE)))
+// MaxNumTransitions = max(TRANSITION_RATIO * MaxNumStates,
+//                         floor( (4093 - (STATE_SIZE + 1) * MaxNumStates /
+//                                (1 + TRANSITION_SIZE)))
+constexpr size_t MAX_NUM_STATES
+        = 4093 / (1 + STATE_SIZE + TRANSITION_RATIO * (1 + TRANSITION_SIZE));
+constexpr size_t MAX_NUM_TRANSITIONS = std::max(
+        MAX_NUM_STATES * TRANSITION_RATIO,
+        (4093 - MAX_NUM_STATES * (STATE_SIZE + 1)) / (1 + TRANSITION_SIZE));
+
+template<size_t MaxNumStates = MAX_NUM_STATES,
+         size_t MaxNumTransitions = MAX_NUM_TRANSITIONS>
 class StateMachine {
 public:
     // Highest value an index will ever be is MaxNum+1
-    // For u8 the ValueMax is 256, so MaxNum needs to be one less: 255
+    // For u8 the ValueMax is 256, so to ensure no index ever overflows,
+    // MaxNum needs to be one less than ValueMax: 255
     static_assert(MaxNumStates <= 255);
     static_assert(MaxNumTransitions <= 255);
     using StateIndex = uint8_t;
@@ -73,7 +94,9 @@ private:
     // Total Size = 3 + 33S + 33T
 };
 
-static_assert(sizeof(StateMachine<>) == 4096);
+static_assert(sizeof(StateMachine<>) <= 4096);
+static_assert(sizeof(StateMachine<>) + std::min(TRANSITION_SIZE, STATE_SIZE)
+              >= 4096);
 
 template<size_t MaxNumStates = 24, size_t MaxNumTransitions = 100>
 class StateMachineBuilder {
@@ -184,10 +207,11 @@ private:
     bool isReachable(const State& state) const
     {
         if (initialState == &state) return true;
-        return std::any_of(transitions.begin(), transitions.end(),
-                           [&](const auto& transition) {
-                               return &transition.to == &state;
-                           });
+        // Raw loop instead of std::any_of because it is more portable
+        for (const auto& transition: transitions) {
+            if (&transition.to == &state) return true;
+        }
+        return false;
     }
 
     void assertValidity() const

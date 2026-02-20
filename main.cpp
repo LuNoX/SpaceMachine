@@ -4,7 +4,7 @@
 
 int main()
 {
-    SpaceMachine::StateMachine stateMachine;
+    alignas(64) static SpaceMachine::StateMachine stateMachine;
     {
         SpaceMachine::StateMachineBuilder builder(stateMachine);
         const auto& state1
