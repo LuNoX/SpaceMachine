@@ -5,7 +5,11 @@
 #ifndef SPACEMACHINE_SPACEMACHINE_HPP
 #define SPACEMACHINE_SPACEMACHINE_HPP
 
+#if __has_include(<cstdint>)
 #include <cstdint>
+#else
+#include <stdint.h>
+#endif
 #include <functional>
 #include <stdexcept>
 #include <utility>
@@ -15,6 +19,7 @@ namespace SpaceMachine {
 
 template<size_t, size_t> class StateMachineBuilder;
 
+constexpr std::size_t STATE_MACHINE_MAX_SIZE = 4096;
 constexpr std::size_t STATE_SIZE = sizeof(std::function<void()>);
 constexpr std::size_t TRANSITION_SIZE = sizeof(std::function<bool()>);
 constexpr std::size_t TRANSITION_RATIO = 4;
@@ -30,10 +35,17 @@ constexpr std::size_t TRANSITION_RATIO = 4;
 //                         floor( (4093 - (STATE_SIZE + 1) * MaxNumStates /
 //                                (1 + TRANSITION_SIZE)))
 constexpr size_t MAX_NUM_STATES
-        = 4093 / (1 + STATE_SIZE + TRANSITION_RATIO * (1 + TRANSITION_SIZE));
-constexpr size_t MAX_NUM_TRANSITIONS = std::max(
-        MAX_NUM_STATES * TRANSITION_RATIO,
-        (4093 - MAX_NUM_STATES * (STATE_SIZE + 1)) / (1 + TRANSITION_SIZE));
+        = (STATE_MACHINE_MAX_SIZE - 3)
+          / (1 + STATE_SIZE + TRANSITION_RATIO * (1 + TRANSITION_SIZE));
+
+constexpr size_t NAIVE_NUM_TRANSITIONS = MAX_NUM_STATES * TRANSITION_RATIO;
+constexpr size_t DERIVED_NUM_TRANSITIONS
+        = (STATE_MACHINE_MAX_SIZE - 3 - MAX_NUM_STATES * (STATE_SIZE + 1))
+          / (1 + TRANSITION_SIZE);
+constexpr size_t MAX_NUM_TRANSITIONS
+        = DERIVED_NUM_TRANSITIONS > NAIVE_NUM_TRANSITIONS
+                  ? DERIVED_NUM_TRANSITIONS
+                  : NAIVE_NUM_TRANSITIONS;
 
 template<size_t MaxNumStates = MAX_NUM_STATES,
          size_t MaxNumTransitions = MAX_NUM_TRANSITIONS>
@@ -94,9 +106,11 @@ private:
     // Total Size = 3 + 33S + 33T
 };
 
-static_assert(sizeof(StateMachine<>) <= 4096);
-static_assert(sizeof(StateMachine<>) + std::min(TRANSITION_SIZE, STATE_SIZE)
-              >= 4096);
+static_assert(sizeof(StateMachine<>) <= STATE_MACHINE_MAX_SIZE);
+constexpr std::size_t MIN_FUNCTION_SIZE
+        = STATE_SIZE < TRANSITION_SIZE ? STATE_SIZE : TRANSITION_SIZE;
+static_assert(sizeof(StateMachine<>) + MIN_FUNCTION_SIZE
+              >= STATE_MACHINE_MAX_SIZE);
 
 template<size_t MaxNumStates = 24, size_t MaxNumTransitions = 100>
 class StateMachineBuilder {
