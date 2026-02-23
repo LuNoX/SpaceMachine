@@ -74,7 +74,7 @@ void testCompileTimeStateMachine()
 
 int main()
 {
-    // testRuntimeStateMachine();
     testCompileTimeStateMachine();
+    testRuntimeStateMachine();
     return 0;
 }

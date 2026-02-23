@@ -7,6 +7,11 @@
 
 #include <type_traits>
 #include <utility>
+#if __has_include(<cstdint>)
+#include <cstdint>
+#else
+#include <stdint.h>
+#endif
 
 namespace SpaceMachine {
 
@@ -41,7 +46,7 @@ struct Callable {
     Callable& operator=(const Callable&) = default;
     Callable& operator=(Callable&&) noexcept = default;
 
-    void* operator new(size_t) = delete;
+    void* operator new(std::size_t) = delete;
     void operator delete(void*) = delete;
 };
 template<typename Fn>
