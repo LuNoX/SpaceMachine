@@ -90,16 +90,16 @@ struct Transition {
     using To = ToStateID;
     using Condition = detail::Condition<Fn>;
 
-    Condition condition;
+    Condition shouldTrigger;
 
     Transition() = delete;
     template<typename F,
              typename
              = std::enable_if_t<!std::is_same_v<std::decay_t<F>, Transition>
                                 && std::is_constructible_v<Condition, F&&>>>
-    explicit Transition(F&& f) noexcept(
+    explicit Transition(F&& shouldTrigger) noexcept(
             std::is_nothrow_constructible_v<Condition, F&&>)
-        : condition{std::forward<F>(f)}
+        : shouldTrigger{std::forward<F>(shouldTrigger)}
     {}
     ~Transition() = default;
 
@@ -114,9 +114,10 @@ struct Transition {
 
 template<typename ToStateID, typename Fn,
          std::enable_if_t<detail::is_valid_condition_v<Fn>, int> = 0>
-Transition<ToStateID, std::decay_t<Fn>> make_transition(Fn&& condition)
+Transition<ToStateID, std::decay_t<Fn>> make_transition(Fn&& shouldTrigger)
 {
-    return Transition<ToStateID, std::decay_t<Fn>>(std::forward<Fn>(condition));
+    return Transition<ToStateID, std::decay_t<Fn>>(
+            std::forward<Fn>(shouldTrigger));
 }
 
 template<typename, typename Fn,
@@ -166,11 +167,10 @@ struct State {
 template<typename StateID, typename Fn, typename... Transitions,
          std::enable_if_t<detail::is_valid_work_v<Fn>, int> = 0>
 State<StateID, std::decay_t<Fn>, std::decay_t<Transitions>...>
-make_state(Fn&& condition, Transitions&&... transitions)
+make_state(Fn&& work, Transitions&&... transitions)
 {
     return State<StateID, std::decay_t<Fn>, std::decay_t<Transitions>...>(
-            std::forward<Fn>(condition),
-            std::forward<Transitions>(transitions)...);
+            std::forward<Fn>(work), std::forward<Transitions>(transitions)...);
 }
 
 template<typename, typename Fn, typename... Transitions,
