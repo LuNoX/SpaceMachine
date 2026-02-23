@@ -5,6 +5,8 @@
 #ifndef SPACEMACHINE_TEMPLATESPACEMACHINE_HPP
 #define SPACEMACHINE_TEMPLATESPACEMACHINE_HPP
 
+#include <functional>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #if __has_include(<cstdint>)
@@ -18,7 +20,129 @@ namespace SpaceMachine {
 template<typename ToStateID, typename Fn>
 struct Transition;
 
+namespace traits {
+// GCC 10.5 does not support _v type traits so we define our own
+#if __cplusplus >= 201703L
+// _v variable templates are available
+
+template<typename F>
+struct is_invocable {
+    static constexpr bool value = std::is_invocable_v<F>;
+};
+
+template<typename R, typename F>
+struct is_invokable_r {
+    static constexpr bool value = std::is_invocable_r_v<R, F>;
+};
+
+template<typename T, typename U>
+struct is_same {
+    static constexpr bool value = std::is_same_v<T, U>;
+};
+
+template<typename Base, typename Derived>
+struct is_base_of {
+    static constexpr bool value = std::is_base_of_v<Base, Derived>;
+};
+
+template<typename T, typename... Args>
+struct is_constructible {
+    static constexpr bool value = std::is_constructible_v<T, Args...>;
+};
+
+template<typename T, typename... Args>
+struct is_nothrow_constructible {
+    static constexpr bool value = std::is_nothrow_constructible_v<T, Args...>;
+};
+
+template<typename... Traits>
+struct conjunction {
+    static constexpr bool value = std::conjunction_v<Traits...>;
+};
+
+#else
+// _v variable templates not available use ::value instead
+
+template<typename F>
+struct is_invocable {
+    static constexpr bool value = std::is_invocable<F>::value;
+};
+
+template<typename R, typename F>
+struct is_invokable_r {
+    static constexpr bool value = std::is_invocable_r<R, F>::value;
+};
+
+template<typename T, typename U>
+struct is_same {
+    static constexpr bool value = std::is_same<T, U>::value;
+};
+
+template<typename Base, typename Derived>
+struct is_base_of {
+    static constexpr bool value = std::is_base_of<Base, Derived>::value;
+};
+
+template<typename T, typename... Args>
+struct is_constructible {
+    static constexpr bool value = std::is_constructible<T, Args...>::value;
+};
+
+template<typename T, typename... Args>
+struct is_nothrow_constructible {
+    static constexpr bool value
+            = std::is_nothrow_constructible<T, Args...>::value;
+};
+
+template<typename... Traits>
+struct conjunction {
+    static constexpr bool value = std::conjunction<Traits...>::value;
+};
+
+#endif
+
+// std available traits
+template<typename F>
+constexpr bool is_invocable_v = is_invocable<F>::value;
+
+template<typename R, typename F>
+constexpr bool is_invokable_r_v = is_invokable_r<R, F>::value;
+
+template<typename T, typename U>
+constexpr bool is_same_v = is_same<T, U>::value;
+
+template<typename Base, typename Derived>
+constexpr bool is_base_of_v = is_base_of<Base, Derived>::value;
+
+template<typename T, typename... Args>
+constexpr bool is_constructible_v = is_constructible<T, Args...>::value;
+
+template<typename T, typename... Args>
+constexpr bool is_nothrow_constructible_v
+        = is_nothrow_constructible<T, Args...>::value;
+
+template<typename... Traits>
+constexpr bool conjunction_v = conjunction<Traits...>::value;
+
+// SpaceMachine custom traits
+template<typename Fn>
+constexpr bool is_valid_work_v = std::is_invocable_v<Fn>;
+
+template<typename Fn>
+constexpr bool is_valid_condition_v = std::is_invocable_r_v<bool, Fn>;
+
+template<typename>
+struct is_transition : std::false_type {};
+
+template<typename ToStateID, typename Fn>
+struct is_transition<Transition<ToStateID, Fn>> : std::true_type {};
+
+template<typename T>
+constexpr bool is_transition_v = is_transition<T>::value;
+} // namespace traits
+
 namespace detail {
+
 template<typename Fn>
 struct Callable {
     Fn callable;
@@ -49,12 +173,10 @@ struct Callable {
     void* operator new(std::size_t) = delete;
     void operator delete(void*) = delete;
 };
-template<typename Fn>
-constexpr bool is_valid_work_v = std::is_invocable_v<Fn>;
 
 template<typename Fn>
 struct Work : Callable<Fn> {
-    static_assert(is_valid_work_v<Fn>,
+    static_assert(traits::is_valid_work_v<Fn>,
                   "Work must be callable with zero arguments!");
 
     using Base = Callable<Fn>;
@@ -65,11 +187,8 @@ struct Work : Callable<Fn> {
 };
 
 template<typename Fn>
-constexpr bool is_valid_condition_v = std::is_invocable_r_v<bool, Fn>;
-
-template<typename Fn>
 struct Condition : Callable<Fn> {
-    static_assert(is_valid_condition_v<Fn>,
+    static_assert(traits::is_valid_condition_v<Fn>,
                   "Condition must be callable with zero arguments and "
                   "return bool!");
 
@@ -79,15 +198,6 @@ struct Condition : Callable<Fn> {
     using Base::operator new;
     using Base::operator delete;
 };
-
-template<typename>
-struct is_transition : std::false_type {};
-
-template<typename ToStateID, typename Fn>
-struct is_transition<Transition<ToStateID, Fn>> : std::true_type {};
-
-template<typename T>
-constexpr bool is_transition_v = is_transition<T>::value;
 } // namespace detail
 
 template<typename ToStateID, typename Fn>
@@ -118,7 +228,7 @@ struct Transition {
 };
 
 template<typename ToStateID, typename Fn,
-         std::enable_if_t<detail::is_valid_condition_v<Fn>, int> = 0>
+         std::enable_if_t<traits::is_valid_condition_v<Fn>, int> = 0>
 Transition<ToStateID, std::decay_t<Fn>> make_transition(Fn&& shouldTrigger)
 {
     return Transition<ToStateID, std::decay_t<Fn>>(
@@ -126,11 +236,11 @@ Transition<ToStateID, std::decay_t<Fn>> make_transition(Fn&& shouldTrigger)
 }
 
 template<typename, typename Fn,
-         std::enable_if_t<!detail::is_valid_condition_v<Fn>, int> = 0>
+         std::enable_if_t<!traits::is_valid_condition_v<Fn>, int> = 0>
 auto make_transition(Fn&&)
 {
     static_assert(
-            detail::is_valid_condition_v<Fn>,
+            traits::is_valid_condition_v<Fn>,
             "Condition must be callable with zero arguments and return bool!");
 }
 
@@ -139,7 +249,7 @@ struct State {
     using ID = StateID;
     using Work = detail::Work<Fn>;
 
-    static_assert((detail::is_transition_v<Transitions> && ...),
+    static_assert(std::conjunction_v<traits::is_transition<Transitions>...>,
                   "All Transitions must be of type Transition<ToStateID, Fn>!");
 
     Work work;
@@ -170,7 +280,7 @@ struct State {
 };
 
 template<typename StateID, typename Fn, typename... Transitions,
-         std::enable_if_t<detail::is_valid_work_v<Fn>, int> = 0>
+         std::enable_if_t<traits::is_valid_work_v<Fn>, int> = 0>
 State<StateID, std::decay_t<Fn>, std::decay_t<Transitions>...>
 make_state(Fn&& work, Transitions&&... transitions)
 {
@@ -179,10 +289,10 @@ make_state(Fn&& work, Transitions&&... transitions)
 }
 
 template<typename, typename Fn, typename... Transitions,
-         std::enable_if_t<!detail::is_valid_work_v<Fn>, int> = 0>
+         std::enable_if_t<!traits::is_valid_work_v<Fn>, int> = 0>
 auto make_state(Fn&&, Transitions&&...)
 {
-    static_assert(detail::is_valid_work_v<Fn>,
+    static_assert(traits::is_valid_work_v<Fn>,
                   "Condition must be callable with zero arguments!");
 }
 
