@@ -4,7 +4,8 @@ project(SpaceMachine)
 set(CMAKE_CXX_STANDARD 17)
 
 add_executable(SpaceMachine main.cpp
-        include/spacemachine/SpaceMachine.hpp)
+        include/spacemachine/SpaceMachine.hpp
+        include/spacemachine/TemplateSpaceMachine.hpp)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     target_compile_options(SpaceMachine PRIVATE

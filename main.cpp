@@ -1,8 +1,9 @@
 #include "include/spacemachine/SpaceMachine.hpp"
+#include "include/spacemachine/TemplateSpaceMachine.hpp"
 #include <iostream>
 #include <random>
 
-int main()
+void testRuntimeStateMachine()
 {
     alignas(64) static SpaceMachine::StateMachine stateMachine;
     {
@@ -48,5 +49,18 @@ int main()
     }
 
     while (true) stateMachine.run();
+}
+
+void testCompileTimeStateMachine()
+{
+    using namespace SpaceMachine;
+    struct S1 {};
+    auto t1 = make_transition<S1>([]() { return true; });
+}
+
+int main()
+{
+    // testRuntimeStateMachine();
+    testCompileTimeStateMachine();
     return 0;
 }
