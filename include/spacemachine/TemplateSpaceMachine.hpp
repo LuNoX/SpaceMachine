@@ -22,7 +22,7 @@ struct Callable {
              typename = std::enable_if_t<std::is_invocable_v<F>>>
     auto operator()() noexcept(noexcept(callable())) -> decltype(callable())
     {
-        return callable();
+        return std::invoke(callable);
     }
 
     Callable() = delete;
@@ -114,9 +114,9 @@ struct Transition {
 
 template<typename ToStateID, typename Fn,
          std::enable_if_t<detail::is_valid_condition_v<Fn>, int> = 0>
-Transition<ToStateID, Fn> make_transition(Fn&& condition)
+Transition<ToStateID, std::decay_t<Fn>> make_transition(Fn&& condition)
 {
-    return Transition<ToStateID, Fn>(std::forward<Fn>(condition));
+    return Transition<ToStateID, std::decay_t<Fn>>(std::forward<Fn>(condition));
 }
 
 template<typename, typename Fn,
@@ -162,6 +162,24 @@ struct State {
     void* operator new(std::size_t) = delete;
     void operator delete(void*) = delete;
 };
+
+template<typename StateID, typename Fn, typename... Transitions,
+         std::enable_if_t<detail::is_valid_work_v<Fn>, int> = 0>
+State<StateID, std::decay_t<Fn>, std::decay_t<Transitions>...>
+make_state(Fn&& condition, Transitions&&... transitions)
+{
+    return State<StateID, std::decay_t<Fn>, std::decay_t<Transitions>...>(
+            std::forward<Fn>(condition),
+            std::forward<Transitions>(transitions)...);
+}
+
+template<typename, typename Fn, typename... Transitions,
+         std::enable_if_t<!detail::is_valid_work_v<Fn>, int> = 0>
+auto make_state(Fn&&, Transitions&&...)
+{
+    static_assert(detail::is_valid_work_v<Fn>,
+                  "Condition must be callable with zero arguments!");
+}
 
 } // namespace SpaceMachine
 

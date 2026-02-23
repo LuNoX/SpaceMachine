@@ -55,7 +55,21 @@ void testCompileTimeStateMachine()
 {
     using namespace SpaceMachine;
     struct S1 {};
-    auto t1 = make_transition<S1>([]() { return true; });
+    struct S2 {};
+    struct S3 {};
+    int a = 1;
+    auto l = [&]() {
+        a++;
+        std::cout << a << std::endl;
+    };
+    auto s1 = make_state<S1>([] { std::cout << "State 1:" << std::endl; },
+                             make_transition<S1>([]() { return true; }));
+    auto t2 = make_transition<S3>([]() { return true; });
+    auto s2 = make_state<S2>(std::ref(l), t2);
+    auto s3 = make_state<S3>(std::ref(l), t2);
+    s1.work();
+    s2.work();
+    s3.work();
 }
 
 int main()
