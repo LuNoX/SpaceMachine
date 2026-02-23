@@ -17,7 +17,8 @@
 
 namespace SpaceMachine {
 
-template<size_t, size_t> class StateMachineBuilder;
+template<std::size_t, std::size_t>
+class StateMachineBuilder;
 
 constexpr std::size_t STATE_MACHINE_MAX_SIZE = 4096;
 constexpr std::size_t STATE_SIZE = sizeof(std::function<void()>);
@@ -34,21 +35,21 @@ constexpr std::size_t TRANSITION_RATIO = 4;
 // MaxNumTransitions = max(TRANSITION_RATIO * MaxNumStates,
 //                         floor( (4093 - (STATE_SIZE + 1) * MaxNumStates /
 //                                (1 + TRANSITION_SIZE)))
-constexpr size_t MAX_NUM_STATES
+constexpr std::size_t MAX_NUM_STATES
         = (STATE_MACHINE_MAX_SIZE - 3)
           / (1 + STATE_SIZE + TRANSITION_RATIO * (1 + TRANSITION_SIZE));
 
-constexpr size_t NAIVE_NUM_TRANSITIONS = MAX_NUM_STATES * TRANSITION_RATIO;
-constexpr size_t DERIVED_NUM_TRANSITIONS
+constexpr std::size_t NAIVE_NUM_TRANSITIONS = MAX_NUM_STATES * TRANSITION_RATIO;
+constexpr std::size_t DERIVED_NUM_TRANSITIONS
         = (STATE_MACHINE_MAX_SIZE - 3 - MAX_NUM_STATES * (STATE_SIZE + 1))
           / (1 + TRANSITION_SIZE);
-constexpr size_t MAX_NUM_TRANSITIONS
+constexpr std::size_t MAX_NUM_TRANSITIONS
         = DERIVED_NUM_TRANSITIONS > NAIVE_NUM_TRANSITIONS
                   ? DERIVED_NUM_TRANSITIONS
                   : NAIVE_NUM_TRANSITIONS;
 
-template<size_t MaxNumStates = MAX_NUM_STATES,
-         size_t MaxNumTransitions = MAX_NUM_TRANSITIONS>
+template<std::size_t MaxNumStates = MAX_NUM_STATES,
+         std::size_t MaxNumTransitions = MAX_NUM_TRANSITIONS>
 class StateMachine {
 public:
     // Highest value an index will ever be is MaxNum+1
@@ -56,8 +57,8 @@ public:
     // MaxNum needs to be one less than ValueMax: 255
     static_assert(MaxNumStates <= 255);
     static_assert(MaxNumTransitions <= 255);
-    using StateIndex = uint8_t;
-    using TransitionIndex = uint8_t;
+    using StateIndex = std::uint8_t;
+    using TransitionIndex = std::uint8_t;
 
     StateMachine() = default;
     ~StateMachine() = default;
@@ -112,7 +113,7 @@ constexpr std::size_t MIN_FUNCTION_SIZE
 static_assert(sizeof(StateMachine<>) + MIN_FUNCTION_SIZE
               >= STATE_MACHINE_MAX_SIZE);
 
-template<size_t MaxNumStates = 24, size_t MaxNumTransitions = 100>
+template<std::size_t MaxNumStates = 24, std::size_t MaxNumTransitions = 100>
 class StateMachineBuilder {
     using StateMachineType = StateMachine<MaxNumStates, MaxNumTransitions>;
     using StateIndex = typename StateMachineType::StateIndex;
@@ -128,8 +129,8 @@ public:
         State(State&&) = default;
         State& operator=(const State&) = delete;
         State& operator=(State&&) = delete;
-        void* operator new(size_t) = delete;
-        void* operator new[](size_t) = delete;
+        void* operator new(std::size_t) = delete;
+        void* operator new[](std::size_t) = delete;
 
     private:
         friend class StateMachineBuilder;
@@ -206,13 +207,14 @@ public:
     }
 
 private:
-    static std::string vectorRepresentation(const std::vector<size_t>& vector)
+    static std::string
+    vectorRepresentation(const std::vector<std::size_t>& vector)
     {
         std::string repr = "[";
         if (vector.empty()) return repr + "]";
         repr += std::to_string(vector.front());
         if (vector.size() == 1) return repr + "]";
-        for (size_t i = 1; i < vector.size(); i++) {
+        for (std::size_t i = 1; i < vector.size(); i++) {
             repr += ", " + std::to_string(vector[i]);
         }
         return repr + "]";
@@ -276,8 +278,8 @@ private:
                     "Initial state was not set! Make sure to call "
                     "setInitialState(...) before calling build().");
         }
-        std::vector<size_t> unreachableStates;
-        for (size_t i = 0; i < states.size(); i++) {
+        std::vector<std::size_t> unreachableStates;
+        for (std::size_t i = 0; i < states.size(); i++) {
             if (!isReachable(states.at(i))) { unreachableStates.push_back(i); }
         }
         if (!unreachableStates.empty()) {
