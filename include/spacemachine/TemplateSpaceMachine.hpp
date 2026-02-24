@@ -5,14 +5,22 @@
 #ifndef SPACEMACHINE_TEMPLATESPACEMACHINE_HPP
 #define SPACEMACHINE_TEMPLATESPACEMACHINE_HPP
 
-#include <functional>
-#include <tuple>
-#include <type_traits>
-#include <utility>
-#if __has_include(<cstdint>)
-#include <cstdint>
+#if __has_include(<cstddef>)
+#include <cstddef>
 #else
-#include <stdint.h>
+#include <stddef.h>
+#endif
+#if __has_include(<functional>)
+#include <functional>
+#endif
+#if __has_include(<tuple>)
+#include <tuple>
+#endif
+#if __has_include(<type_traits>)
+#include <type_traits>
+#endif
+#if __has_include(<utility>)
+#include <utility>
 #endif
 
 namespace SpaceMachine {
@@ -37,6 +45,75 @@ template<typename T>
 constexpr bool is_transition_v = is_transition<T>::value;
 } // namespace traits
 
+namespace functional {
+// AVR, Arduino and specific versions of ARM clang don't support <functional>
+#if __has_include(<functional>)
+using std::invoke;
+#else
+namespace detail {
+
+// --- Member function pointer (by reference) ---
+
+template<typename F, typename T, typename... Args>
+auto invoke_impl(F T::* f, T& obj, Args&&... args) noexcept(
+        noexcept((obj.*f)(std::forward<Args>(args)...)))
+        -> decltype((obj.*f)(std::forward<Args>(args)...))
+{
+    return (obj.*f)(std::forward<Args>(args)...);
+}
+
+// --- Member function pointer (by pointer) ---
+
+template<typename F, typename T, typename... Args>
+auto invoke_impl(F T::* f, T* obj, Args&&... args) noexcept(
+        noexcept((obj->*f)(std::forward<Args>(args)...)))
+        -> decltype((obj->*f)(std::forward<Args>(args)...))
+{
+    return (obj->*f)(std::forward<Args>(args)...);
+}
+
+// --- Member object pointer (by reference) ---
+
+template<typename F, typename T>
+auto invoke_impl(F T::* f, T& obj) noexcept(noexcept(obj.*f))
+        -> decltype(obj.*f)
+{
+    return obj.*f;
+}
+
+// --- Member object pointer (by pointer) ---
+
+template<typename F, typename T>
+auto invoke_impl(F T::* f, T* obj) noexcept(noexcept(obj->*f))
+        -> decltype(obj->*f)
+{
+    return obj->*f;
+}
+
+// --- Regular callable (function, lambda, functor) ---
+
+template<typename F, typename... Args>
+auto invoke_impl(F&& f, Args&&... args) noexcept(
+        noexcept(std::forward<F>(f)(std::forward<Args>(args)...)))
+        -> decltype(std::forward<F>(f)(std::forward<Args>(args)...))
+{
+    return std::forward<F>(f)(std::forward<Args>(args)...);
+}
+
+} // namespace detail
+
+template<typename F, typename... Args>
+auto invoke(F&& f, Args&&... args) noexcept(noexcept(
+        detail::invoke_impl(std::forward<F>(f), std::forward<Args>(args)...)))
+        -> decltype(detail::invoke_impl(std::forward<F>(f),
+                                        std::forward<Args>(args)...))
+{
+    return detail::invoke_impl(std::forward<F>(f), std::forward<Args>(args)...);
+}
+#endif
+
+} // namespace functional
+
 namespace detail {
 
 template<typename Fn>
@@ -47,7 +124,7 @@ struct Callable {
              typename = std::enable_if_t<std::is_invocable_v<F>>>
     auto operator()() noexcept(noexcept(callable())) -> decltype(callable())
     {
-        return std::invoke(callable);
+        return functional::invoke(callable);
     }
 
     Callable() = delete;
