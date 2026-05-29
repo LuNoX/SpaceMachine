@@ -11,9 +11,9 @@ target_include_directories(
     SpaceMachine INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-option(SPACEMACHINE_BUILD_DEMO "Build SpaceMachine demo" ON)
+option(SPACEMACHINE_DEV_MODE "SpaceMachine Development Settings" OFF)
 
-if (SPACEMACHINE_BUILD_DEMO AND PROJECT_IS_TOP_LEVEL)
+if (SPACEMACHINE_DEV_MODE AND PROJECT_IS_TOP_LEVEL)
     add_executable(SpaceMachineDemo main.cpp)
 
     set(SPACEMACHINE_GNU_CLANG_WARNINGS
@@ -71,4 +71,25 @@ if (SPACEMACHINE_BUILD_DEMO AND PROJECT_IS_TOP_LEVEL)
             $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${SPACEMACHINE_GNU_CLANG_WARNINGS}>
             $<$<CXX_COMPILER_ID:MSVC>:${SPACEMACHINE_MSVC_WARNINGS}>
     )
+
+    find_program(CLANG_TIDY_EXE NAMES clang-tidy)
+    find_program(CPPCHECK_EXE NAMES cppcheck)
+
+    if (CLANG_TIDY_EXE)
+        set_target_properties(
+            SpaceMachineDemo
+            PROPERTIES
+                CXX_CLANG_TIDY
+                "${CLANG_TIDY_EXE};-checks=bugprone-*,modernize-*,performance-*"
+        )
+    endif ()
+
+    if (CPPCHECK_EXE)
+        set_target_properties(
+            SpaceMachineDemo
+            PROPERTIES CXX_CPPCHECK
+                       "${CPPCHECK_EXE};--enable=all;--inconclusive"
+        )
+    endif ()
+
 endif ()

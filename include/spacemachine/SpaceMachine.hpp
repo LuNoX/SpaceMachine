@@ -115,7 +115,7 @@ struct Callable {
                      !traits::is_self_constructing_v<Callable, F>
                      && polyfill::is_invocable_v<F>
                      && polyfill::is_constructible_v<Fn, F>>>
-    explicit Callable(F&& callable) noexcept( // NOSONAR
+    explicit Callable(F&& callable) noexcept(
             polyfill::is_nothrow_constructible_v<Fn, F&&>)
         : m_callable(polyfill::forward<F>(callable))
     {}
@@ -163,7 +163,7 @@ struct TypeListNode {
     template<typename T, typename = polyfill::enable_if_t<
                                  !traits::is_self_constructing_v<Type, T>
                                  && polyfill::is_constructible_v<Type, T&&>>>
-    explicit TypeListNode(T&& v) noexcept( // NOSONAR
+    explicit TypeListNode(T&& v) noexcept(
             polyfill::is_nothrow_constructible_v<Type, T&&>)
         : value(polyfill::forward<T>(v))
     {}
@@ -219,14 +219,14 @@ struct TypeListImpl<polyfill::index_sequence<Indices...>, Types...>
     void operator delete(void*) = delete;
 };
 
-template<typename TargetID, std::size_t Index, typename... States>
+template<typename TargetID, polyfill::size_t Index, typename... States>
 struct FindStateIndexImpl;
 
-template<typename TargetID, std::size_t Index, typename Current,
+template<typename TargetID, polyfill::size_t Index, typename Current,
          typename... Rest>
 struct FindStateIndexImpl<TargetID, Index, Current, Rest...> {
-    static constexpr std::size_t value
-            = std::is_same_v<typename Current::ID, TargetID>
+    static constexpr polyfill::size_t value
+            = polyfill::is_same_v<typename Current::ID, TargetID>
                       ? Index
                       : FindStateIndexImpl<TargetID, Index + 1, Rest...>::value;
 };
@@ -234,7 +234,7 @@ struct FindStateIndexImpl<TargetID, Index, Current, Rest...> {
 template<typename>
 inline constexpr bool always_false_v = false;
 
-template<typename TargetID, std::size_t Index>
+template<typename TargetID, polyfill::size_t Index>
 struct FindStateIndexImpl<TargetID, Index> {
     static_assert(always_false_v<TargetID>,
                   "State with given target ID not in provided TypeList!");
@@ -268,7 +268,7 @@ struct Transition {
              typename = polyfill::enable_if_t<
                      !traits::is_self_constructing_v<Transition, F>
                      && polyfill::is_constructible_v<Condition, F&&>>>
-    explicit Transition(F&& shouldTrigger) noexcept( // NOSONAR
+    explicit Transition(F&& shouldTrigger) noexcept(
             polyfill::is_nothrow_constructible_v<Condition, F&&>)
         : m_shouldTrigger{polyfill::forward<F>(shouldTrigger)}
     {}
