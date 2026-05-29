@@ -80,7 +80,7 @@ if (SPACEMACHINE_DEV_MODE AND PROJECT_IS_TOP_LEVEL)
             SpaceMachineDemo
             PROPERTIES
                 CXX_CLANG_TIDY
-                "${CLANG_TIDY_EXE};-checks=bugprone-*,modernize-*,performance-*"
+                "${CLANG_TIDY_EXE};--quiet;--config-file=${CMAKE_SOURCE_DIR}/.clang-tidy"
         )
     endif ()
 

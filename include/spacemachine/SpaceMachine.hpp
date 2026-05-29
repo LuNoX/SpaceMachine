@@ -157,15 +157,15 @@ struct Condition : Callable<Fn> {
 
 template<polyfill::size_t Index, typename Type>
 struct TypeListNode {
-    Type value;
+    Type m_value;
 
     TypeListNode() = delete;
     template<typename T, typename = polyfill::enable_if_t<
                                  !traits::is_self_constructing_v<Type, T>
                                  && polyfill::is_constructible_v<Type, T&&>>>
-    explicit TypeListNode(T&& v) noexcept(
+    explicit TypeListNode(T&& value) noexcept(
             polyfill::is_nothrow_constructible_v<Type, T&&>)
-        : value(polyfill::forward<T>(v))
+        : m_value(polyfill::forward<T>(value))
     {}
     ~TypeListNode() = default;
 
@@ -180,15 +180,17 @@ struct TypeListNode {
 
 template<polyfill::size_t I, typename T>
 T& GetValue(TypeListNode<I, T>& node) noexcept
-{ return node.value; }
+{ return node.m_value; }
 
 template<polyfill::size_t I, typename T>
 const T& GetValue(const TypeListNode<I, T>& node) noexcept
-{ return node.value; }
+{ return node.m_value; }
 
+// NOLINTBEGIN(cppcoreguidelines-rvalue-reference-param-not-moved)
 template<polyfill::size_t I, typename T>
 T&& GetValue(TypeListNode<I, T>&& node) noexcept
-{ return polyfill::move(node.value); }
+{ return polyfill::move(node.m_value); }
+// NOLINTEND(cppcoreguidelines-rvalue-reference-param-not-moved)
 
 template<typename IndexSequence, typename... Types>
 struct TypeListImpl;
@@ -203,10 +205,10 @@ struct TypeListImpl<polyfill::index_sequence<Indices...>, Types...>
                      && sizeof...(Ts) == sizeof...(Types)
                      && polyfill::conjunction_v<
                              polyfill::is_constructible<Types, Ts&&>...>>>
-    explicit TypeListImpl(Ts&&... vs) noexcept(
+    explicit TypeListImpl(Ts&&... values) noexcept(
             polyfill::conjunction_v<
                     polyfill::is_nothrow_constructible<Types, Ts&&>...>)
-        : TypeListNode<Indices, Types>(polyfill::forward<Ts>(vs))...
+        : TypeListNode<Indices, Types>(polyfill::forward<Ts>(values))...
     {}
     ~TypeListImpl() = default;
 
@@ -293,7 +295,7 @@ Transition<ToStateID, polyfill::decay_t<Fn>> MakeTransition(Fn&& shouldTrigger)
 
 template<typename, typename Fn,
          polyfill::enable_if_t<!traits::is_valid_condition_v<Fn>, int> = 0>
-auto MakeTransition(Fn&&)
+auto MakeTransition(Fn&& /*shouldTrigger*/)
 {
     static_assert(
             traits::is_valid_condition_v<Fn>,
@@ -349,7 +351,7 @@ MakeState(Fn&& work, Transitions&&... transitions)
 
 template<typename, typename Fn, typename... Transitions,
          polyfill::enable_if_t<!traits::is_valid_work_v<Fn>, int> = 0>
-auto MakeState(Fn&&, Transitions&&...)
+auto MakeState(Fn&& /*work*/, Transitions&&... /*transitions*/)
 {
     static_assert(traits::is_valid_work_v<Fn>,
                   "Condition must be callable with zero arguments!");

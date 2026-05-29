@@ -1,5 +1,8 @@
 #include "include/spacemachine/SpaceMachine.hpp"
+#include <functional>
 #include <iostream>
+
+// NOLINTBEGIN(readability-identifier-length)
 
 int main()
 {
@@ -10,9 +13,9 @@ int main()
     int a = 1;
     auto l = [&]() {
         a++;
-        std::cout << a << std::endl;
+        std::cout << a << '\n';
     };
-    auto s1 = MakeState<S1>([] { std::cout << "State 1:" << std::endl; },
+    auto s1 = MakeState<S1>([] { std::cout << "State 1:" << '\n'; },
                             MakeTransition<S1>([]() { return true; }));
     auto t2 = MakeTransition<S3>([]() { return true; });
     auto s2 = MakeState<S2>(std::ref(l), t2);
@@ -23,3 +26,5 @@ int main()
 
     return 0;
 }
+
+// NOLINTEND(readability-identifier-length)
