@@ -1,8 +1,7 @@
 #include "include/spacemachine/SpaceMachine.hpp"
 #include <iostream>
-#include <random>
 
-void testStateMachine()
+int main()
 {
     using namespace SpaceMachine;
     struct S1 {};
@@ -21,10 +20,6 @@ void testStateMachine()
     s1.work();
     s2.work();
     s3.work();
-}
 
-int main()
-{
-    testStateMachine();
     return 0;
 }

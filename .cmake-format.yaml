@@ -1,11 +1,15 @@
 format:
-  line_width: 100
+  line_width: 80
   tab_size: 4
   use_tabchars: false
   max_subgroups_hwrap: 3
   max_pargs_hwrap: 3
   separate_ctrl_name_with_space: true
-  separate_fn_name_with_space: true
+  separate_fn_name_with_space: false
+  dangle_parens: True
+  dangle-align: 'prefix'
+  autosort: True
+  keyword_case: 'upper'
 
 markup:
   enable_markup: false

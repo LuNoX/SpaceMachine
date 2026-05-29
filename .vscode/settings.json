@@ -12,5 +12,5 @@
     ],
     "cmake.configureOnOpen": true,
     "cmake.exportCompileCommandsFile": true,
-    "cmake.generator": "Ninja"
+    "cmake.generator": "Ninja",
 }
