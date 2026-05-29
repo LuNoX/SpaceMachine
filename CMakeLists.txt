@@ -23,6 +23,7 @@ if (SPACEMACHINE_BUILD_DEMO AND PROJECT_IS_TOP_LEVEL)
         -Wpedantic
         -Wno-c++98-compat
         -Wno-c++98-compat-pedantic
+        -Wno-padded
         -Wconversion
         -Wsign-conversion
         -Wnull-dereference

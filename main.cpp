@@ -17,9 +17,9 @@ int main()
     auto t2 = MakeTransition<S3>([]() { return true; });
     auto s2 = MakeState<S2>(std::ref(l), t2);
     auto s3 = MakeState<S3>(std::ref(l), t2);
-    s1.work();
-    s2.work();
-    s3.work();
+    s1.m_work();
+    s2.m_work();
+    s3.m_work();
 
     return 0;
 }

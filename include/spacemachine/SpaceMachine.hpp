@@ -24,9 +24,6 @@
 
 namespace SpaceMachine {
 
-template<typename ToStateID, typename Fn>
-struct Transition;
-
 namespace polyfill {
 #if __has_include(<cstddef>)
 using std::size_t;
@@ -67,6 +64,10 @@ using std::move;
 
 } // namespace polyfill
 
+// Forward declaration for use inside traits::is_transition
+template<typename ToStateID, typename Fn>
+struct Transition;
+
 namespace traits {
 template<typename Fn>
 constexpr bool is_valid_work_v = polyfill::is_invocable_v<Fn>;
@@ -88,7 +89,10 @@ struct is_self_constructing : polyfill::false_type {};
 
 template<typename Self, typename T>
 struct is_self_constructing<Self, T>
-    : polyfill::is_base_of<Self, polyfill::decay_t<T>> {};
+    : polyfill::integral_constant<
+              bool,
+              polyfill::is_base_of_v<Self, polyfill::decay_t<T>>
+                      && !polyfill::is_same_v<Self, polyfill::decay_t<T>>> {};
 
 template<typename Self, typename T>
 constexpr bool is_self_constructing_v = is_self_constructing<Self, T>::value;
@@ -98,14 +102,12 @@ namespace detail {
 
 template<typename Fn>
 struct Callable {
-    Fn callable;
+    Fn m_callable;
 
     template<typename F = Fn,
              typename = polyfill::enable_if_t<polyfill::is_invocable_v<F>>>
-    auto operator()() noexcept(noexcept(callable())) -> decltype(callable())
-    {
-        return polyfill::invoke(callable);
-    }
+    auto operator()() noexcept(noexcept(m_callable())) -> decltype(m_callable())
+    { return polyfill::invoke(m_callable); }
 
     Callable() = delete;
     template<typename F = Fn,
@@ -115,7 +117,7 @@ struct Callable {
                      && polyfill::is_constructible_v<Fn, F>>>
     explicit Callable(F&& callable) noexcept( // NOSONAR
             polyfill::is_nothrow_constructible_v<Fn, F&&>)
-        : callable(polyfill::forward<F>(callable))
+        : m_callable(polyfill::forward<F>(callable))
     {}
     ~Callable() = default;
 
@@ -130,8 +132,8 @@ struct Callable {
 
 template<typename Fn>
 struct Work : Callable<Fn> {
-    static_assert(traits::is_valid_work_v<Fn>, 
-                    "Work must be callable with zero arguments!");
+    static_assert(traits::is_valid_work_v<Fn>,
+                  "Work must be callable with zero arguments!");
 
     using Base = Callable<Fn>;
     using Base::Base;
@@ -178,21 +180,15 @@ struct TypeListNode {
 
 template<polyfill::size_t I, typename T>
 T& GetValue(TypeListNode<I, T>& node) noexcept
-{
-    return node.value;
-}
+{ return node.value; }
 
 template<polyfill::size_t I, typename T>
 const T& GetValue(const TypeListNode<I, T>& node) noexcept
-{
-    return node.value;
-}
+{ return node.value; }
 
 template<polyfill::size_t I, typename T>
 T&& GetValue(TypeListNode<I, T>&& node) noexcept
-{
-    return polyfill::move(node.value);
-}
+{ return polyfill::move(node.value); }
 
 template<typename IndexSequence, typename... Types>
 struct TypeListImpl;
@@ -265,16 +261,16 @@ struct Transition {
     using To = ToStateID;
     using Condition = detail::Condition<Fn>;
 
-    Condition shouldTrigger;
+    Condition m_shouldTrigger;
 
     Transition() = delete;
     template<typename F,
              typename = polyfill::enable_if_t<
-                     traits::is_self_constructing_v<Transition, F>
+                     !traits::is_self_constructing_v<Transition, F>
                      && polyfill::is_constructible_v<Condition, F&&>>>
     explicit Transition(F&& shouldTrigger) noexcept( // NOSONAR
             polyfill::is_nothrow_constructible_v<Condition, F&&>)
-        : shouldTrigger{polyfill::forward<F>(shouldTrigger)}
+        : m_shouldTrigger{polyfill::forward<F>(shouldTrigger)}
     {}
     ~Transition() = default;
 
@@ -313,8 +309,8 @@ struct State {
             polyfill::conjunction_v<traits::is_transition<Transitions>...>,
             "All Transitions must be of type Transition<ToStateID, Fn>!");
 
-    Work work;
-    TypeList<Transitions...> transitions;
+    Work m_work;
+    TypeList<Transitions...> m_transitions;
 
     State() = delete;
     template<typename F, typename... Ts,
@@ -327,8 +323,8 @@ struct State {
             polyfill::is_nothrow_constructible_v<Work, F&&>
             && polyfill::conjunction_v<
                     polyfill::is_nothrow_constructible<Transitions, Ts&&>...>)
-        : work(polyfill::forward<F>(work)),
-          transitions(polyfill::forward<Ts>(transitions)...)
+        : m_work(polyfill::forward<F>(work)),
+          m_transitions(polyfill::forward<Ts>(transitions)...)
     {}
     ~State() = default;
     State(State&) = default;
