@@ -8,27 +8,27 @@ add_executable(SpaceMachine main.cpp
         include/spacemachine/TemplateSpaceMachine.hpp)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-    target_compile_options(SpaceMachine PRIVATE
-            -Wall
-            -Wextra
-            -Wpedantic
-            -Wconversion
-            -Wsign-conversion
-            -Wnull-dereference
-            -Wdouble-promotion
-            -Wformat=2
-            -Wimplicit-fallthrough
-            -Woverloaded-virtual
-            -Wnon-virtual-dtor
-            -Wold-style-cast
-            -Wcast-align
-            -Wuseless-cast
-            -Wduplicated-cond
-            -Wduplicated-branches
-            -Wlogical-op
-            -Wmisleading-indentation
-            -Werror
-    )
+        target_compile_options(SpaceMachine PRIVATE
+                -Wall
+                -Wextra
+                -Wpedantic
+                -Wconversion
+                -Wsign-conversion
+                -Wnull-dereference
+                -Wdouble-promotion
+                -Wformat=2
+                -Wimplicit-fallthrough
+                -Woverloaded-virtual
+                -Wnon-virtual-dtor
+                -Wold-style-cast
+                -Wcast-align
+                -Wuseless-cast
+                -Wduplicated-cond
+                -Wduplicated-branches
+                -Wlogical-op
+                -Wmisleading-indentation
+                -Werror
+)
 endif ()
 
 if (MSVC)

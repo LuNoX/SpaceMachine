@@ -26,8 +26,8 @@ constexpr std::size_t TRANSITION_SIZE = sizeof(std::function<bool()>);
 constexpr std::size_t TRANSITION_RATIO = 4;
 // We want to guarantee an average of 4 Transitions per State
 // MaxNumTransitions >= TRANSITION_RATIO * MaxNumStates
-// We also want to guarantee the default StateMachine takes up no more than 4KiB
-// sizeof(StateMachine<>) = 3 + (STATE_SIZE + 1) * MaxNumStates
+// We also want to guarantee the default RuntimeStateMachine takes up no more
+// than 4KiB sizeof(RuntimeStateMachine<>) = 3 + (STATE_SIZE + 1) * MaxNumStates
 //                          + (TRANSITION_SIZE + 1) * MaxNumTransitions
 // Maximizing the quantity (MaxNumStates + MaxNumTransitions) yields:
 // MaxNumStates = floor(4093 /
@@ -50,7 +50,7 @@ constexpr std::size_t MAX_NUM_TRANSITIONS
 
 template<std::size_t MaxNumStates = MAX_NUM_STATES,
          std::size_t MaxNumTransitions = MAX_NUM_TRANSITIONS>
-class StateMachine {
+class RuntimeStateMachine {
 public:
     // Highest value an index will ever be is MaxNum+1
     // For u8 the ValueMax is 256, so to ensure no index ever overflows,
@@ -60,19 +60,19 @@ public:
     using StateIndex = std::uint8_t;
     using TransitionIndex = std::uint8_t;
 
-    StateMachine() = default;
-    ~StateMachine() = default;
-    StateMachine(const StateMachine&) = delete;
-    StateMachine(StateMachine&&) = default;
-    StateMachine& operator=(const StateMachine&) = delete;
-    StateMachine& operator=(StateMachine&&) = default;
+    RuntimeStateMachine() = default;
+    ~RuntimeStateMachine() = default;
+    RuntimeStateMachine(const RuntimeStateMachine&) = delete;
+    RuntimeStateMachine(RuntimeStateMachine&&) = default;
+    RuntimeStateMachine& operator=(const RuntimeStateMachine&) = delete;
+    RuntimeStateMachine& operator=(RuntimeStateMachine&&) = default;
 
     void doWork() { states[currentState](); }
 
     bool triggerTransitions()
     {
         for (TransitionIndex i = stateTransitionsStartIndices[currentState];
-             i <= transitionEndIndexOf(currentState); ++i) {
+                i <= transitionEndIndexOf(currentState); ++i) {
             if (!transitionConditions[i]()) continue;
             currentState = transitionTargets[i];
             return true;
@@ -107,15 +107,16 @@ private:
     // Total Size = 3 + 33S + 33T
 };
 
-static_assert(sizeof(StateMachine<>) <= STATE_MACHINE_MAX_SIZE);
+static_assert(sizeof(RuntimeStateMachine<>) <= STATE_MACHINE_MAX_SIZE);
 constexpr std::size_t MIN_FUNCTION_SIZE
         = STATE_SIZE < TRANSITION_SIZE ? STATE_SIZE : TRANSITION_SIZE;
-static_assert(sizeof(StateMachine<>) + MIN_FUNCTION_SIZE
+static_assert(sizeof(RuntimeStateMachine<>) + MIN_FUNCTION_SIZE
               >= STATE_MACHINE_MAX_SIZE);
 
 template<std::size_t MaxNumStates = 24, std::size_t MaxNumTransitions = 100>
 class StateMachineBuilder {
-    using StateMachineType = StateMachine<MaxNumStates, MaxNumTransitions>;
+    using StateMachineType
+            = RuntimeStateMachine<MaxNumStates, MaxNumTransitions>;
     using StateIndex = typename StateMachineType::StateIndex;
     using TransitionIndex = typename StateMachineType::TransitionIndex;
 
@@ -158,7 +159,7 @@ public:
 
     StateMachineBuilder() = delete;
     explicit StateMachineBuilder(
-            StateMachine<MaxNumStates, MaxNumTransitions>& stateMachine)
+            RuntimeStateMachine<MaxNumStates, MaxNumTransitions>& stateMachine)
         : stateMachine(stateMachine)
     {
         states.reserve(MaxNumStates);
@@ -243,7 +244,7 @@ private:
                     + std::to_string(states.size())
                     + "\n"
                       "Try allocating a bigger state machine, like:\n"
-                      "StateMachine<"
+                      "RuntimeStateMachine<"
                     + std::to_string(states.size()) + ", "
                     + std::to_string(transitions.size()) + ">\n");
         }
@@ -258,7 +259,7 @@ private:
                     + std::to_string(transitions.size())
                     + "\n"
                       "Try allocating a bigger state machine, like:\n"
-                      "StateMachine<"
+                      "RuntimeStateMachine<"
                     + std::to_string(states.size()) + ", "
                     + std::to_string(transitions.size()) + ">\n");
         }
@@ -315,7 +316,7 @@ private:
         throw std::invalid_argument("State cannot be found.");
     }
 
-    StateMachine<MaxNumStates, MaxNumTransitions>& stateMachine;
+    RuntimeStateMachine<MaxNumStates, MaxNumTransitions>& stateMachine;
     std::vector<State> states;
     std::vector<Transition> transitions;
     const State* initialState = nullptr;

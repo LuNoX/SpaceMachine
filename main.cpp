@@ -5,7 +5,7 @@
 
 void testRuntimeStateMachine()
 {
-    alignas(64) static SpaceMachine::StateMachine stateMachine;
+    alignas(64) static SpaceMachine::RuntimeStateMachine stateMachine;
     {
         SpaceMachine::StateMachineBuilder builder(stateMachine);
         const auto& state1
@@ -62,11 +62,11 @@ void testCompileTimeStateMachine()
         a++;
         std::cout << a << std::endl;
     };
-    auto s1 = make_state<S1>([] { std::cout << "State 1:" << std::endl; },
-                             make_transition<S1>([]() { return true; }));
-    auto t2 = make_transition<S3>([]() { return true; });
-    auto s2 = make_state<S2>(std::ref(l), t2);
-    auto s3 = make_state<S3>(std::ref(l), t2);
+    auto s1 = MakeState<S1>([] { std::cout << "State 1:" << std::endl; },
+                            MakeTransition<S1>([]() { return true; }));
+    auto t2 = MakeTransition<S3>([]() { return true; });
+    auto s2 = MakeState<S2>(std::ref(l), t2);
+    auto s3 = MakeState<S3>(std::ref(l), t2);
     s1.work();
     s2.work();
     s3.work();
