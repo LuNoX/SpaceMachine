@@ -40,6 +40,7 @@ using std::tuple;
 #if __has_include(<type_traits>)
 using std::conjunction_v;
 using std::decay_t;
+using std::disjunction_v;
 using std::enable_if_t;
 using std::false_type;
 using std::index_sequence;
@@ -52,6 +53,7 @@ using std::is_invocable_r_v;
 using std::is_invocable_v;
 using std::is_nothrow_constructible;
 using std::is_nothrow_constructible_v;
+using std::is_same;
 using std::is_same_v;
 using std::make_index_sequence;
 using std::true_type;
@@ -67,6 +69,10 @@ using std::move;
 // Forward declaration for use inside traits::is_transition
 template<typename ToStateID, typename Fn>
 struct Transition;
+
+// Forward declaration for use inside traits::is_known_state_id
+template<typename StateID, typename Fn, typename... Transitions>
+struct State;
 
 namespace traits {
 template<typename Fn>
@@ -96,6 +102,51 @@ struct is_self_constructing<Self, T>
 
 template<typename Self, typename T>
 constexpr bool is_self_constructing_v = is_self_constructing<Self, T>::value;
+
+template<typename TargetID, typename... States>
+struct contains_state_with_id
+    : polyfill::integral_constant<bool,
+                                  polyfill::disjunction_v<polyfill::is_same<
+                                          typename States::ID, TargetID>...>> {
+};
+
+template<typename TargetID, typename... States>
+constexpr bool contains_state_with_id_v
+        = contains_state_with_id<TargetID, States...>::value;
+
+template<typename... IDs>
+struct contains_no_duplicates : polyfill::true_type {};
+
+template<typename Head, typename... Tail>
+struct contains_no_duplicates<Head, Tail...>
+    : polyfill::integral_constant<
+              bool, !polyfill::disjunction_v<polyfill::is_same<Head, Tail>...>
+                            && contains_no_duplicates<Tail...>::value> {};
+
+template<typename... States>
+constexpr bool are_state_ids_unique_v
+        = contains_no_duplicates<typename States::ID...>::value;
+
+template<typename State, typename... AllStates>
+struct are_transition_targets_known;
+
+template<typename StateID, typename Fn, typename... Transitions,
+         typename... AllStates>
+struct are_transition_targets_known<
+        SpaceMachine::State<StateID, Fn, Transitions...>, AllStates...>
+    : polyfill::integral_constant<
+              bool, polyfill::conjunction_v<contains_state_with_id<
+                            typename Transitions::To, AllStates...>...>> {};
+
+template<typename... States>
+struct is_every_transition_target_known
+    : polyfill::integral_constant<
+              bool, polyfill::conjunction_v<are_transition_targets_known<
+                            States, States...>...>> {};
+
+template<typename... States>
+constexpr bool is_every_transition_target_known_v
+        = is_every_transition_target_known<States...>::value;
 } // namespace traits
 
 namespace detail {
@@ -260,7 +311,7 @@ struct TypeList
 
 template<typename ToStateID, typename Fn>
 struct Transition {
-    using To = ToStateID;
+    using ToID = ToStateID;
     using Condition = detail::Condition<Fn>;
 
     Condition m_shouldTrigger;
@@ -287,7 +338,8 @@ struct Transition {
 
 template<typename ToStateID, typename Fn,
          polyfill::enable_if_t<traits::is_valid_condition_v<Fn>, int> = 0>
-Transition<ToStateID, polyfill::decay_t<Fn>> MakeTransition(Fn&& shouldTrigger)
+[[nodiscard]] Transition<ToStateID, polyfill::decay_t<Fn>>
+MakeTransition(Fn&& shouldTrigger)
 {
     return Transition<ToStateID, polyfill::decay_t<Fn>>(
             polyfill::forward<Fn>(shouldTrigger));
@@ -345,7 +397,8 @@ struct State {
 
 template<typename StateID, typename Fn, typename... Transitions,
          polyfill::enable_if_t<traits::is_valid_work_v<Fn>, int> = 0>
-State<StateID, polyfill::decay_t<Fn>, polyfill::decay_t<Transitions>...>
+[[nodiscard]] State<StateID, polyfill::decay_t<Fn>,
+                    polyfill::decay_t<Transitions>...>
 MakeState(Fn&& work, Transitions&&... transitions)
 {
     return State<StateID, polyfill::decay_t<Fn>,
@@ -368,11 +421,17 @@ auto MakeState(Fn&& /*work*/, Transitions&&... /*transitions*/)
 /// declare higher-priority transitions earlier.
 template<typename InitialStateID, typename... States>
 struct StateMachine {
+    // TODO: make these static asserts more user-friendly by printing the
+    // offending state IDs or transition targets.
+    static_assert(traits::contains_state_with_id_v<InitialStateID, States...>,
+                  "Initial state ID must be one of the registered states!");
+    static_assert(traits::are_state_ids_unique_v<States...>,
+                  "State IDs must be unique!");
+    static_assert(traits::is_every_transition_target_known_v<States...>,
+                  "All transition targets must be registered states!");
+
     TypeList<States...> states;
     polyfill::size_t activeStateIndex;
-    // TODO: add static_assert that InitialStateID is in States
-    // TODO: add static_assert that all StateIDs in States are unique
-    // TODO: add static_assert that all ToStateIDs in Transitions are in States
 };
 
 } // namespace SpaceMachine

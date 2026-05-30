@@ -1,12 +1,6 @@
 # SpaceMachine
 
 TODOs:
-
-- replace vector with byte storage and placement new
-- replace exceptions with Rust style Result types
-- replace function objects with inlinable callable types
-- offer a compile time version that stores graph topology as types rather than
-  data
 - add mode selection for
     - work then transition checks vs transition checks then work
     - only do one transition per cycle vs trigger transitions until state is
