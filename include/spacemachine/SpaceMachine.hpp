@@ -89,6 +89,16 @@ struct is_self_constructing<Self, T>
 template<typename Self, typename T>
 constexpr bool is_self_constructing_v = is_self_constructing<Self, T>::value;
 
+template<typename Self, typename... Ts>
+struct is_constructing_from_self : polyfill::false_type {};
+
+template<typename Self, typename T>
+struct is_constructing_from_self<Self, T> : is_self_constructing<Self, T> {};
+
+template<typename Self, typename... Ts>
+constexpr bool is_constructing_from_self_v
+        = is_constructing_from_self<Self, Ts...>::value;
+
 template<typename Fn>
 constexpr bool is_valid_work_v = polyfill::is_invocable_v<Fn>;
 
@@ -300,7 +310,8 @@ struct TypeListImpl<polyfill::index_sequence<Indices...>, Types...>
     TypeListImpl() = delete;
     template<typename... Ts,
              typename = polyfill::enable_if_t<
-                     sizeof...(Ts) == sizeof...(Types)
+                     !traits::is_constructing_from_self_v<TypeListImpl, Ts...>
+                     && sizeof...(Ts) == sizeof...(Types)
                      && polyfill::conjunction_v<
                              polyfill::is_constructible<Types, Ts&&>...>>>
     explicit TypeListImpl(Ts&&... values) noexcept(
@@ -439,7 +450,8 @@ struct State {
     State() = delete;
     template<typename F, typename... Ts,
              typename = polyfill::enable_if_t<
-                     !polyfill::is_same_v<State, F>
+                     !traits::is_self_constructing_v<State, F>
+                     && !polyfill::is_same_v<State, F>
                      && polyfill::is_constructible_v<Work, F&&>
                      && polyfill::conjunction_v<
                              polyfill::is_constructible<Transitions, Ts&&>...>>>
@@ -496,8 +508,10 @@ struct StateMachine {
 
     StateMachine() = delete;
     template<typename... Ss,
-             typename = polyfill::enable_if_t<polyfill::conjunction_v<
-                     polyfill::is_constructible<States, Ss&&>...>>>
+             typename = polyfill::enable_if_t<
+                     !traits::is_constructing_from_self_v<StateMachine, Ss...>
+                     && polyfill::conjunction_v<
+                             polyfill::is_constructible<States, Ss&&>...>>>
     explicit StateMachine(Ss&&... states) noexcept(
             polyfill::conjunction_v<
                     polyfill::is_nothrow_constructible<States, Ss&&>...>)
