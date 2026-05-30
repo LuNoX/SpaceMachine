@@ -8,7 +8,8 @@ Checks: >
   modernize-*,
   readability-*,
   misc-*,
-  -modernize-use-trailing-return-type
+  -modernize-use-trailing-return-type,
+  -cppcoreguidelines-missing-std-forward
 
 WarningsAsErrors: '*'
 
@@ -32,3 +33,7 @@ CheckOptions:
   
   - key: cppcoreguidelines-rvalue-reference-param-not-moved.MoveFunctions
     value: 'polyfill::move'
+
+# This doesnt work, so we disable the check instead.
+# - key: cppcoreguidelines-missing-std-forward.ForwardFunction
+#   value: 'polyfill::forward'

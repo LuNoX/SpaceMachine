@@ -70,43 +70,37 @@ using std::move;
 template<typename ToStateID, typename Fn>
 struct Transition;
 
-// Forward declaration for use inside traits::is_known_state_id
+// Forward declaration for use inside traits::is_state and is_known_state_id
 template<typename StateID, typename Fn, typename... Transitions>
 struct State;
 
 namespace traits {
-template<typename Fn>
-constexpr bool is_valid_work_v = polyfill::is_invocable_v<Fn>;
-
-template<typename Fn>
-constexpr bool is_valid_condition_v = polyfill::is_invocable_r_v<bool, Fn>;
-
-template<typename>
-struct is_transition : polyfill::false_type {};
-
-template<typename ToStateID, typename Fn>
-struct is_transition<Transition<ToStateID, Fn>> : polyfill::true_type {};
-
-template<typename T>
-constexpr bool is_transition_v = is_transition<T>::value;
-
 template<typename, typename...>
 struct is_self_constructing : polyfill::false_type {};
 
 template<typename Self, typename T>
 struct is_self_constructing<Self, T>
     : polyfill::integral_constant<
-              bool,
-              polyfill::is_base_of_v<Self, polyfill::decay_t<T>>
-                      && !polyfill::is_same_v<Self, polyfill::decay_t<T>>> {};
+              bool, polyfill::is_base_of_v<polyfill::decay_t<Self>,
+                                           polyfill::decay_t<T>>
+                            && !polyfill::is_same_v<polyfill::decay_t<Self>,
+                                                    polyfill::decay_t<T>>> {};
 
 template<typename Self, typename T>
 constexpr bool is_self_constructing_v = is_self_constructing<Self, T>::value;
 
+template<typename Fn>
+constexpr bool is_valid_work_v = polyfill::is_invocable_v<Fn>;
+
+template<typename Fn>
+constexpr bool is_valid_condition_v = polyfill::is_invocable_r_v<bool, Fn>;
+
 template<typename T, typename... Ts>
 struct is_in_pack
     : polyfill::integral_constant<
-              bool, polyfill::disjunction_v<polyfill::is_same<T, Ts>...>> {};
+              bool, polyfill::disjunction_v<polyfill::is_same<
+                            polyfill::decay_t<T>, polyfill::decay_t<Ts>>...>> {
+};
 
 template<typename T, typename... Ts>
 constexpr bool is_in_pack_v = is_in_pack<T, Ts...>::value;
@@ -118,36 +112,81 @@ struct is_not_in_pack
 template<typename T, typename... Ts>
 constexpr bool is_not_in_pack_v = is_not_in_pack<T, Ts...>::value;
 
-template<typename... StateIDs>
-struct all_state_ids_unique : polyfill::true_type {};
+namespace detail {
 
-template<typename Head, typename... Tail>
-struct all_state_ids_unique<Head, Tail...>
-    : polyfill::integral_constant<
-              bool, is_not_in_pack_v<Head, Tail...>
-                            && all_state_ids_unique<Tail...>::value> {
-    static_assert(
-            is_not_in_pack_v<Head, Tail...>,
-            "Duplicate state ID detected! See backtrace for offending ID.");
+template<typename>
+struct is_transition_impl : polyfill::false_type {};
+
+template<typename ToStateID, typename Fn>
+struct is_transition_impl<Transition<ToStateID, Fn>> : polyfill::true_type {};
+
+template<typename>
+struct is_state_impl : polyfill::false_type {};
+
+template<typename StateID, typename Fn, typename... Transitions>
+struct is_state_impl<State<StateID, Fn, Transitions...>> : polyfill::true_type {
 };
 
 template<typename TargetID, typename... States>
-struct is_known_state_id : is_in_pack<TargetID, typename States::ID...> {};
+struct is_known_state_id_impl
+    : traits::is_in_pack<TargetID, typename States::ID...> {};
+
+template<typename... StateIDs>
+struct all_state_ids_unique_impl : polyfill::true_type {};
+
+template<typename Head, typename... Tail>
+struct all_state_ids_unique_impl<Head, Tail...>
+    : polyfill::integral_constant<
+              bool, traits::is_not_in_pack_v<Head, Tail...>
+                            && all_state_ids_unique_impl<Tail...>::value> {
+    static_assert(
+            traits::is_not_in_pack_v<Head, Tail...>,
+            "Duplicate state ID detected! See backtrace for offending ID.");
+};
+} // namespace detail
+
+template<typename TargetID, typename... States>
+struct is_known_state_id
+    : detail::is_known_state_id_impl<TargetID, polyfill::decay_t<States>...> {};
 
 template<typename TargetID, typename... States>
 constexpr bool is_known_state_id_v
         = is_known_state_id<TargetID, States...>::value;
 
+template<typename... States>
+struct all_states_unique : detail::all_state_ids_unique_impl<
+                                   typename polyfill::decay_t<States>::ID...> {
+};
+
+template<typename T>
+struct is_transition : detail::is_transition_impl<polyfill::decay_t<T>> {};
+
+template<typename T>
+constexpr bool is_transition_v = is_transition<T>::value;
+
+template<typename T>
+struct is_state : detail::is_state_impl<polyfill::decay_t<T>> {};
+
+template<typename T>
+constexpr bool is_state_v = is_state<T>::value;
+
+namespace detail {
 template<typename State, typename... States>
-struct transitions_target_known_ids;
+struct transitions_target_known_ids_impl;
 
 template<typename StateID, typename Fn, typename... Transitions,
          typename... States>
-struct transitions_target_known_ids<
+struct transitions_target_known_ids_impl<
         SpaceMachine::State<StateID, Fn, Transitions...>, States...>
     : polyfill::integral_constant<
               bool, polyfill::conjunction_v<is_known_state_id<
-                            typename Transitions::To, States...>...>> {};
+                            typename Transitions::ToID, States...>...>> {};
+} // namespace detail
+
+template<typename State, typename... States>
+struct transitions_target_known_ids
+    : detail::transitions_target_known_ids_impl<polyfill::decay_t<State>,
+                                                States...> {};
 
 template<typename... States>
 struct transitions_target_registered_states {
@@ -254,14 +293,14 @@ T&& GetValue(TypeListNode<I, T>&& node) noexcept
 template<typename IndexSequence, typename... Types>
 struct TypeListImpl;
 
+// NOLINTBEGIN(misc-multiple-inheritance)
 template<polyfill::size_t... Indices, typename... Types>
 struct TypeListImpl<polyfill::index_sequence<Indices...>, Types...>
     : TypeListNode<Indices, Types>... {
     TypeListImpl() = delete;
     template<typename... Ts,
              typename = polyfill::enable_if_t<
-                     !traits::is_self_constructing_v<TypeListImpl, Ts...>
-                     && sizeof...(Ts) == sizeof...(Types)
+                     sizeof...(Ts) == sizeof...(Types)
                      && polyfill::conjunction_v<
                              polyfill::is_constructible<Types, Ts&&>...>>>
     explicit TypeListImpl(Ts&&... values) noexcept(
@@ -279,24 +318,30 @@ struct TypeListImpl<polyfill::index_sequence<Indices...>, Types...>
     void* operator new(polyfill::size_t) = delete;
     void operator delete(void*) = delete;
 };
+// NOLINTEND(misc-multiple-inheritance)
 
 template<typename TargetID, polyfill::size_t Index, typename... States>
 struct FindStateIndexImpl;
 
 template<typename TargetID, polyfill::size_t Index, typename Current,
          typename... Rest>
-struct FindStateIndexImpl<TargetID, Index, Current, Rest...> {
-    static constexpr polyfill::size_t value
-            = polyfill::is_same_v<typename Current::ID, TargetID>
-                      ? Index
-                      : FindStateIndexImpl<TargetID, Index + 1, Rest...>::value;
-};
+struct FindStateIndexImpl<TargetID, Index, Current, Rest...>
+    : FindStateIndexImpl<TargetID, Index + 1, Rest...> {};
+
+template<typename TargetID, polyfill::size_t Index, typename Fn,
+         typename... Transitions, typename... Rest>
+struct FindStateIndexImpl<TargetID, Index,
+                          SpaceMachine::State<TargetID, Fn, Transitions...>,
+                          Rest...>
+    : polyfill::integral_constant<polyfill::size_t, Index> {};
 
 template<typename>
 inline constexpr bool always_false_v = false;
 
 template<typename TargetID, polyfill::size_t Index>
 struct FindStateIndexImpl<TargetID, Index> {
+    // TODO: use something like id_not_found_v<TargetID> for better error
+    // message
     static_assert(always_false_v<TargetID>,
                   "State with given target ID not in provided TypeList!");
 };
@@ -372,9 +417,9 @@ template<typename, typename Fn,
          polyfill::enable_if_t<!traits::is_valid_condition_v<Fn>, int> = 0>
 auto MakeTransition(Fn&& /*shouldTrigger*/)
 {
-    static_assert(
-            traits::is_valid_condition_v<Fn>,
-            "Condition must be callable with zero arguments and return bool!");
+    static_assert(traits::is_valid_condition_v<Fn>,
+                  "Condition must be callable with zero arguments and "
+                  "return bool!");
 }
 
 template<typename StateID, typename Fn, typename... Transitions>
@@ -382,6 +427,8 @@ struct State {
     using ID = StateID;
     using Work = detail::Work<Fn>;
 
+    // TODO: change to loop for better error message
+    // TODO: consider moving to factory function for better error message
     static_assert(
             polyfill::conjunction_v<traits::is_transition<Transitions>...>,
             "All Transitions must be of type Transition<ToStateID, Fn>!");
@@ -392,7 +439,7 @@ struct State {
     State() = delete;
     template<typename F, typename... Ts,
              typename = polyfill::enable_if_t<
-                     !polyfill::is_same_v<State, polyfill::decay_t<F>>
+                     !polyfill::is_same_v<State, F>
                      && polyfill::is_constructible_v<Work, F&&>
                      && polyfill::conjunction_v<
                              polyfill::is_constructible<Transitions, Ts&&>...>>>
@@ -408,7 +455,7 @@ struct State {
     // TODO: add doc explaining that when copying with reference captures
     // inside the work the user is responsible for managing the lifetime
     // and any UB that may arise from dangling references.
-    State(State&) = default;
+    State(const State&) = default;
     State& operator=(const State&) = default;
 
     State(State&&) noexcept = default;
@@ -444,20 +491,105 @@ auto MakeState(Fn&& /*work*/, Transitions&&... /*transitions*/)
 /// declare higher-priority transitions earlier.
 template<typename InitialStateID, typename... States>
 struct StateMachine {
-    static_assert(traits::is_known_state_id_v<InitialStateID, States...>,
-                  "Initial state ID must be one of the registered states!");
-    static_assert(traits::all_state_ids_unique<typename States::ID...>::value,
-                  "Duplicate state ID! See backtrace for offending ID.");
-    static_assert(
-            for_each_type<traits::transitions_target_registered_states<
-                                  States...>::template type,
-                          States...>::value,
-            "Transition targets unknown state ID! See backtrace for offending "
-            "state.");
+    TypeList<States...> m_states;
+    polyfill::size_t m_activeStateIndex;
 
-    TypeList<States...> states;
-    polyfill::size_t activeStateIndex;
+    StateMachine() = delete;
+    template<typename... Ss,
+             typename = polyfill::enable_if_t<polyfill::conjunction_v<
+                     polyfill::is_constructible<States, Ss&&>...>>>
+    explicit StateMachine(Ss&&... states) noexcept(
+            polyfill::conjunction_v<
+                    polyfill::is_nothrow_constructible<States, Ss&&>...>)
+        : m_states(polyfill::forward<Ss>(states)...),
+          m_activeStateIndex(detail::FindStateIndexImpl<InitialStateID, 0,
+                                                        States...>::value)
+    {}
+    ~StateMachine() = default;
+
+    StateMachine(const StateMachine&) = default;
+    StateMachine& operator=(const StateMachine&) = default;
+    StateMachine(StateMachine&&) noexcept = default;
+    StateMachine& operator=(StateMachine&&) noexcept = default;
+
+    void* operator new(polyfill::size_t) = delete;
+    void operator delete(void*) = delete;
 };
+
+template<typename InitialStateID, typename... States,
+         polyfill::enable_if_t<
+                 polyfill::conjunction_v<traits::is_state<States>...>
+                         && traits::is_known_state_id_v<InitialStateID,
+                                                        States...>
+                         && traits::all_states_unique<States...>::value
+                         && for_each_type<
+                                 traits::transitions_target_registered_states<
+                                         States...>::template type,
+                                 States...>::value,
+                 int> = 0>
+[[nodiscard]] StateMachine<InitialStateID, polyfill::decay_t<States>...>
+MakeStateMachine(States&&... states)
+{
+    return StateMachine<InitialStateID, polyfill::decay_t<States>...>(
+            polyfill::forward<States>(states)...);
+}
+
+template<typename InitialStateID, typename... States,
+         polyfill::enable_if_t<
+                 !polyfill::conjunction_v<traits::is_state<States>...>, int>
+         = 0>
+auto MakeStateMachine(States&&... /*ss*/)
+{
+    static_assert(for_each_type<traits::is_state, States...>::value,
+                  "One or more arguments are not states! See backtrace for "
+                  "offending argument.");
+}
+
+template<typename InitialStateID, typename... States,
+         polyfill::enable_if_t<
+                 polyfill::conjunction_v<traits::is_state<States>...>
+                         && !traits::is_known_state_id_v<InitialStateID,
+                                                         States...>,
+                 int> = 0>
+auto MakeStateMachine(States&&... /*ss*/)
+{
+    static_assert(traits::is_known_state_id_v<InitialStateID, States...>,
+                  "Initial state ID is not among the provided states!");
+}
+
+template<typename InitialStateID, typename... States,
+         polyfill::enable_if_t<
+                 polyfill::conjunction_v<traits::is_state<States>...>
+                         && traits::is_known_state_id_v<InitialStateID,
+                                                        States...>
+                         && !traits::all_states_unique<States...>::value,
+                 int> = 0>
+auto MakeStateMachine(States&&... /*ss*/)
+{
+    static_assert(traits::all_states_unique<States...>::value,
+                  "Duplicate state ID! See backtrace for offending ID.");
+}
+
+template<typename InitialStateID, typename... States,
+         polyfill::enable_if_t<
+                 polyfill::conjunction_v<traits::is_state<States>...>
+                         && traits::is_known_state_id_v<InitialStateID,
+                                                        States...>
+                         && traits::all_states_unique<States...>::value
+                         && !for_each_type<
+                                 traits::transitions_target_registered_states<
+                                         States...>::template type,
+                                 States...>::value,
+                 int> = 0>
+auto MakeStateMachine(States&&... /*ss*/)
+{
+    static_assert(for_each_type<traits::transitions_target_registered_states<
+                                        States...>::template type,
+                                States...>::value,
+                  "Transition targets unknown state ID! See backtrace for "
+                  "offending "
+                  "state.");
+}
 
 } // namespace SpaceMachine
 

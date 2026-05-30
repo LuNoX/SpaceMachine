@@ -4,13 +4,16 @@
 
 // NOLINTBEGIN(readability-identifier-length)
 // Clang-tidy will warn about short identifiers, but they are readable here.
+namespace {
+struct S1 {};
+struct S2 {};
+struct S3 {};
+} // namespace
 
 int main()
 {
     using namespace SpaceMachine;
-    struct S1 {};
-    struct S2 {};
-    struct S3 {};
+
     int a = 1;
     auto l = [&]() {
         a++;
@@ -25,6 +28,8 @@ int main()
     s2.m_work();
     s3.m_work();
 
+    auto sm = MakeStateMachine<S1>(s1, s2, s3);
+    (void)sm; // silence unused variable warning
     return 0;
 }
 
