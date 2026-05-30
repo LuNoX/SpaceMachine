@@ -6,7 +6,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_library(SpaceMachine INTERFACE)
 
 target_compile_features(SpaceMachine INTERFACE cxx_std_17)
-set_target_properties(SpaceMachine PROPERTIES CXX_EXTENSIONS OFF)
 target_include_directories(
     SpaceMachine INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
@@ -87,8 +86,15 @@ if (SPACEMACHINE_DEV_MODE AND PROJECT_IS_TOP_LEVEL)
     if (CPPCHECK_EXE)
         set_target_properties(
             SpaceMachineDemo
-            PROPERTIES CXX_CPPCHECK
-                       "${CPPCHECK_EXE};--enable=all;--inconclusive"
+            PROPERTIES
+                CXX_CPPCHECK
+                "${CPPCHECK_EXE};
+                --enable=all;
+                --inconclusive;
+                --std=c++17;
+                --suppress=missingIncludeSystem;
+                --suppress=unusedFunction;
+                --suppress=checkersReport"
         )
     endif ()
 

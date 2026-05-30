@@ -3,6 +3,7 @@
 #include <iostream>
 
 // NOLINTBEGIN(readability-identifier-length)
+// Clang-tidy will warn about short identifiers, but they are readable here.
 
 int main()
 {

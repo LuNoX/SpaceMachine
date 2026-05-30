@@ -1,0 +1,45 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "user-overrides",
+            "hidden": true,
+            "description": "User overrides for CMake presets. This file is ignored by git, so you can put machine-specific or user-specific settings here."
+        },
+        {
+            "name": "debug",
+            "inherits": [
+                "base-debug",
+                "user-overrides"
+            ]
+        },
+        {
+            "name": "relwithdebinfo",
+            "inherits": [
+                "base-relwithdebinfo",
+                "user-overrides"
+            ]
+        },
+        {
+            "name": "release",
+            "inherits": [
+                "base-release",
+                "user-overrides"
+            ]
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "debug",
+            "configurePreset": "debug"
+        },
+        {
+            "name": "relwithdebinfo",
+            "configurePreset": "relwithdebinfo"
+        },
+        {
+            "name": "release",
+            "configurePreset": "release"
+        }
+    ]
+}

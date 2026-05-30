@@ -7,15 +7,7 @@
     },
     "C_Cpp.errorSquiggles": "disabled",
     "C_Cpp.intelliSenseEngine": "disabled",
-    "clangd.arguments": [
-        "--compile-commands-dir=${workspaceFolder}/build",
-    ],
-    "cmake.configureArgs": [
-        "-DSPACEMACHINE_DEV_MODE=ON"
-    ],
     "cmake.configureOnOpen": true,
-    "cmake.exportCompileCommandsFile": true,
-    "cmake.generator": "Ninja",
     "files.associations": {
         ".clang-*": "yaml",
     },

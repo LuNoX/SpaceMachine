@@ -1,5 +1,7 @@
 build/
 
+CMakeUserPresets.json
+
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json

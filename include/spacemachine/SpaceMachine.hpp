@@ -99,7 +99,6 @@ constexpr bool is_self_constructing_v = is_self_constructing<Self, T>::value;
 } // namespace traits
 
 namespace detail {
-
 template<typename Fn>
 struct Callable {
     Fn m_callable;
@@ -187,6 +186,7 @@ const T& GetValue(const TypeListNode<I, T>& node) noexcept
 { return node.m_value; }
 
 // NOLINTBEGIN(cppcoreguidelines-rvalue-reference-param-not-moved)
+// Clang-tidy will warn that node isn't moved, but that is intentional here.
 template<polyfill::size_t I, typename T>
 T&& GetValue(TypeListNode<I, T>&& node) noexcept
 { return polyfill::move(node.m_value); }
@@ -329,9 +329,14 @@ struct State {
           m_transitions(polyfill::forward<Ts>(transitions)...)
     {}
     ~State() = default;
+
+    // TODO: add doc explaining that when copying with reference captures
+    // inside the work the user is responsible for managing the lifetime
+    // and any UB that may arise from dangling references.
     State(State&) = default;
+    State& operator=(const State&) = default;
+
     State(State&&) noexcept = default;
-    State& operator=(State&) = delete;
     State& operator=(State&&) noexcept = default;
 
     void* operator new(polyfill::size_t) = delete;
@@ -357,10 +362,17 @@ auto MakeState(Fn&& /*work*/, Transitions&&... /*transitions*/)
                   "Condition must be callable with zero arguments!");
 }
 
+/// TODO: turn this comment into a doc
+/// States and transitions are evaluated in declaration order.
+/// The first matching transition takes priority. To express priority,
+/// declare higher-priority transitions earlier.
 template<typename InitialStateID, typename... States>
 struct StateMachine {
     TypeList<States...> states;
     polyfill::size_t activeStateIndex;
+    // TODO: add static_assert that InitialStateID is in States
+    // TODO: add static_assert that all StateIDs in States are unique
+    // TODO: add static_assert that all ToStateIDs in Transitions are in States
 };
 
 } // namespace SpaceMachine
