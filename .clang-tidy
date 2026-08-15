@@ -34,6 +34,14 @@ CheckOptions:
   - key: cppcoreguidelines-rvalue-reference-param-not-moved.MoveFunctions
     value: 'polyfill::move'
 
+  # clangd always disables this check in favor of its own implementation
+  # (see .clangd's Diagnostics.Includes)
+  # -- keep .clangd's UnusedIncludes/MissingIncludes matching these values.
+  - key: misc-include-cleaner.UnusedIncludes
+    value: true
+  - key: misc-include-cleaner.MissingIncludes
+    value: true
+
 # This doesnt work, so we disable the check instead.
 # - key: cppcoreguidelines-missing-std-forward.ForwardFunction
 #   value: 'polyfill::forward'

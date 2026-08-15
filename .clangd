@@ -1,0 +1,8 @@
+# clangd disables the clang-tidy "misc-include-cleaner" check and uses
+# it's own implementation instead (see clangd's TidyProvider.cpp,
+# disableUnusableChecks()).
+# However, the defaults are different between the two.
+# So we set them both here and in .clang-tidy to match.
+Diagnostics:
+  UnusedIncludes: Strict
+  MissingIncludes: Strict
