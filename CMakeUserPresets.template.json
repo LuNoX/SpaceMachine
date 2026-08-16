@@ -31,15 +31,24 @@
     "buildPresets": [
         {
             "name": "debug",
-            "configurePreset": "debug"
+            "configurePreset": "debug",
+            "targets": [
+                "all"
+            ]
         },
         {
             "name": "relwithdebinfo",
-            "configurePreset": "relwithdebinfo"
+            "configurePreset": "relwithdebinfo",
+            "targets": [
+                "all"
+            ]
         },
         {
             "name": "release",
-            "configurePreset": "release"
+            "configurePreset": "release",
+            "targets": [
+                "all"
+            ]
         }
     ]
 }

@@ -3,7 +3,7 @@ format:
   tab_size: 4
   use_tabchars: false
   max_subgroups_hwrap: 3
-  max_pargs_hwrap: 3
+  max_pargs_hwrap: 4
   separate_ctrl_name_with_space: true
   separate_fn_name_with_space: false
   dangle_parens: True

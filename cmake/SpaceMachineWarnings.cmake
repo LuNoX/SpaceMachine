@@ -1,14 +1,11 @@
 include_guard(GLOBAL)
 
 function (spacemachine_enable_warnings target)
-    set(gnu_clang_warnings
+    set(gnu_warnings
         -Werror
         -Wall
         -Wextra
         -Wpedantic
-        -Wno-c++98-compat
-        -Wno-c++98-compat-pedantic
-        -Wno-padded
         -Wconversion
         -Wsign-conversion
         -Wnull-dereference
@@ -47,10 +44,22 @@ function (spacemachine_enable_warnings target)
         /w14928 # illegal copy initialization
     )
 
-    target_compile_options(
-        ${target}
-        PRIVATE
-            $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${gnu_clang_warnings}>
-            $<$<CXX_COMPILER_ID:MSVC>:${msvc_warnings}>
+    set(clang_cl_warnings
+        ${gnu_warnings}
+        # Wall expands to Weverything on clang-cl, so we need to disable some
+        -Wno-c++98-compat
+        -Wno-c++98-compat-pedantic
+        -Wno-padded
+        /permissive-
     )
+
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        set(warnings ${msvc_warnings})
+    elseif (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+        set(warnings ${clang_cl_warnings})
+    else ()
+        set(warnings ${gnu_warnings})
+    endif ()
+
+    target_compile_options(${target} PRIVATE ${warnings})
 endfunction ()

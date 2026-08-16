@@ -13,7 +13,7 @@ Checks: >
 
 WarningsAsErrors: '*'
 
-HeaderFilterRegex: 'src/|include/|tests/'
+HeaderFilterRegex: 'include[/\\]spacemachine[/\\]'
 FormatStyle: file
 SystemHeaders: false
 UseColor: true

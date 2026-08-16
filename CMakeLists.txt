@@ -25,8 +25,6 @@ option(SPACEMACHINE_INSTALL "Generate SpaceMachine install rules"
 )
 
 if (SPACEMACHINE_DEV_MODE AND PROJECT_IS_TOP_LEVEL)
-    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-    list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
     add_subdirectory(dev)
 endif ()
 

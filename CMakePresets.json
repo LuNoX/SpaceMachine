@@ -10,7 +10,7 @@
             "name": "base",
             "hidden": true,
             "generator": "Ninja",
-            "binaryDir": "${sourceDir}/build",
+            "binaryDir": "${sourceDir}/build/${presetName}",
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER": "clang-cl"
             }
@@ -19,7 +19,8 @@
             "name": "dev",
             "hidden": true,
             "cacheVariables": {
-                "SPACEMACHINE_DEV_MODE": "ON"
+                "SPACEMACHINE_DEV_MODE": "ON",
+                "SPACEMACHINE_REQUIRE_DEV_TOOLS": "ON"
             }
         },
         {
