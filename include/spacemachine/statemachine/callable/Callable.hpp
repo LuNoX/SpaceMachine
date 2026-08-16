@@ -2,7 +2,6 @@
 #define SPACEMACHINE_CALLABLE_HPP
 
 #include "spacemachine/polyfill/cstddef.hpp"
-#include "spacemachine/polyfill/functional.hpp"
 #include "spacemachine/polyfill/type_traits.hpp"
 #include "spacemachine/polyfill/utility.hpp"
 #include "spacemachine/statemachine/traits/IsSelfConstructing.hpp"
@@ -16,7 +15,7 @@ struct Callable {
     template<typename F = Fn,
              typename = polyfill::enable_if_t<polyfill::is_invocable_v<F>>>
     auto operator()() noexcept(noexcept(m_callable())) -> decltype(m_callable())
-    { return polyfill::invoke(m_callable); }
+    { return m_callable(); }
 
     Callable() = delete;
     template<typename F = Fn,
