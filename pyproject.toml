@@ -1,0 +1,11 @@
+[project]
+name = "spacemachine-dev-tools"
+version = "0.1.0"
+description = "Dev tooling for SpaceMachine."
+requires-python = ">=3.9"
+dependencies = [
+    "clangd-tidy==1.1.1",
+]
+
+[tool.uv]
+package = false

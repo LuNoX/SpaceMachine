@@ -1,101 +1,62 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.21)
 
-project(SpaceMachine LANGUAGES CXX)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+project(
+    SpaceMachine
+    VERSION 0.1.0
+    DESCRIPTION "Header-only compile-time finite state machine"
+    LANGUAGES CXX
+)
+
+include(GNUInstallDirs)
 
 add_library(SpaceMachine INTERFACE)
+add_library(SpaceMachine::SpaceMachine ALIAS SpaceMachine)
 
 target_compile_features(SpaceMachine INTERFACE cxx_std_17)
 target_include_directories(
-    SpaceMachine INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include
+    SpaceMachine
+    INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+              $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
 option(SPACEMACHINE_DEV_MODE "SpaceMachine Development Settings" OFF)
+option(SPACEMACHINE_INSTALL "Generate SpaceMachine install rules"
+       ${PROJECT_IS_TOP_LEVEL}
+)
 
 if (SPACEMACHINE_DEV_MODE AND PROJECT_IS_TOP_LEVEL)
-    add_executable(SpaceMachineDemo main.cpp)
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+    list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+    add_subdirectory(dev)
+endif ()
 
-    set(SPACEMACHINE_GNU_CLANG_WARNINGS
-        -Werror
-        -Wall
-        -Wextra
-        -Wpedantic
-        -Wno-c++98-compat
-        -Wno-c++98-compat-pedantic
-        -Wno-padded
-        -Wconversion
-        -Wsign-conversion
-        -Wnull-dereference
-        -Wdouble-promotion
-        -Wformat=2
-        -Wimplicit-fallthrough
-        -Woverloaded-virtual
-        -Wnon-virtual-dtor
-        -Wold-style-cast
-        -Wcast-align
-        -Wmisleading-indentation
+if (SPACEMACHINE_INSTALL)
+    include(CMakePackageConfigHelpers)
+
+    set(SPACEMACHINE_INSTALL_CMAKEDIR
+        ${CMAKE_INSTALL_LIBDIR}/cmake/SpaceMachine
     )
 
-    set(SPACEMACHINE_MSVC_WARNINGS
-        /W4
-        /permissive-
-        /WX
-        # More strict MSVC diagnostics (equivalent intent to GCC/Clang warnings)
-        /w14242 # conversion possible loss of data
-        /w14254 # operator precedence
-        /w14263 # member function hides virtual
-        /w14265 # class has virtual functions but destructor is not virtual
-        /w14287 # unsigned/negative constant mismatch
-        /we4289 # nonstandard extension used : 'var' loop control variable
-        /w14296 # expression is always true/false
-        /w14311 # pointer truncation
-        /w14545 # expression before comma has no effect
-        /w14546 # function call before comma missing argument list
-        /w14547 # operator precedence causes unexpected result
-        /w14549 # operator before comma has no effect
-        /w14555 # expression has no effect
-        /w14619 # pragma warning invalid
-        /w14640 # thread safety warning
-        /w14826 # conversion between types
-        /w14905 # string literal to char*
-        /w14906 # string literal conversion mismatch
-        /w14928 # illegal copy initialization
+    install(TARGETS SpaceMachine EXPORT SpaceMachineTargets)
+    install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    install(
+        EXPORT SpaceMachineTargets
+        FILE SpaceMachineTargets.cmake
+        NAMESPACE SpaceMachine::
+        DESTINATION ${SPACEMACHINE_INSTALL_CMAKEDIR}
     )
 
-    target_compile_features(SpaceMachineDemo PRIVATE cxx_std_17)
-    target_link_libraries(SpaceMachineDemo PRIVATE SpaceMachine)
-    target_compile_options(
-        SpaceMachineDemo
-        PRIVATE
-            $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:GNU>>:${SPACEMACHINE_GNU_CLANG_WARNINGS}>
-            $<$<CXX_COMPILER_ID:MSVC>:${SPACEMACHINE_MSVC_WARNINGS}>
+    configure_package_config_file(
+        cmake/SpaceMachineConfig.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/SpaceMachineConfig.cmake
+        INSTALL_DESTINATION ${SPACEMACHINE_INSTALL_CMAKEDIR}
     )
-
-    find_program(CLANG_TIDY_EXE NAMES clang-tidy)
-    find_program(CPPCHECK_EXE NAMES cppcheck)
-
-    if (CLANG_TIDY_EXE)
-        set_target_properties(
-            SpaceMachineDemo
-            PROPERTIES
-                CXX_CLANG_TIDY
-                "${CLANG_TIDY_EXE};--quiet;--config-file=${CMAKE_SOURCE_DIR}/.clang-tidy"
-        )
-    endif ()
-
-    if (CPPCHECK_EXE)
-        set_target_properties(
-            SpaceMachineDemo
-            PROPERTIES
-                CXX_CPPCHECK
-                "${CPPCHECK_EXE};
-                --enable=all;
-                --inconclusive;
-                --std=c++17;
-                --suppress=missingIncludeSystem;
-                --suppress=unusedFunction;
-                --suppress=checkersReport"
-        )
-    endif ()
-
+    write_basic_package_version_file(
+        ${CMAKE_CURRENT_BINARY_DIR}/SpaceMachineConfigVersion.cmake
+        COMPATIBILITY SameMajorVersion ARCH_INDEPENDENT
+    )
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/SpaceMachineConfig.cmake
+                  ${CMAKE_CURRENT_BINARY_DIR}/SpaceMachineConfigVersion.cmake
+            DESTINATION ${SPACEMACHINE_INSTALL_CMAKEDIR}
+    )
 endif ()

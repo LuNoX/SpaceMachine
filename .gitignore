@@ -1,7 +1,12 @@
-build/
-
 CMakeUserPresets.json
+
+build/
+.venv/
 
 .vscode/*
 !.vscode/settings.json
 !.vscode/extensions.json
+!.vscode/launch.json
+
+*.pyc
+**/__pycache__/

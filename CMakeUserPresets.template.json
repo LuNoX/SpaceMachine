@@ -1,5 +1,5 @@
 {
-    "version": 3,
+    "version": 6,
     "configurePresets": [
         {
             "name": "user-overrides",
@@ -9,22 +9,22 @@
         {
             "name": "debug",
             "inherits": [
-                "base-debug",
-                "user-overrides"
+                "user-overrides",
+                "base-debug"
             ]
         },
         {
             "name": "relwithdebinfo",
             "inherits": [
-                "base-relwithdebinfo",
-                "user-overrides"
+                "user-overrides",
+                "base-relwithdebinfo"
             ]
         },
         {
             "name": "release",
             "inherits": [
-                "base-release",
-                "user-overrides"
+                "user-overrides",
+                "base-release"
             ]
         }
     ],

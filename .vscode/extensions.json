@@ -3,6 +3,7 @@
         "cheshirekow.cmake-format",
         "llvm-vs-code-extensions.vscode-clangd",
         "ms-vscode.cmake-tools",
+        "ms-vscode.cpptools",
         "twxs.cmake",
         "IBM.output-colorizer"
     ]

@@ -1,6 +1,6 @@
-#include "include/spacemachine/SpaceMachine.hpp"
 #include <functional>
 #include <iostream>
+#include <spacemachine/SpaceMachine.hpp>
 
 // NOLINTBEGIN(readability-identifier-length)
 // Clang-tidy will warn about short identifiers, but they are readable here.

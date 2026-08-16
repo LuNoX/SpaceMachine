@@ -1,0 +1,9 @@
+include(SpaceMachineAnalyzers)
+include(SpaceMachineWarnings)
+
+add_executable(SpaceMachineDemo main.cpp)
+target_compile_features(SpaceMachineDemo PRIVATE cxx_std_17)
+target_link_libraries(SpaceMachineDemo PRIVATE SpaceMachine)
+spacemachine_enable_warnings(SpaceMachineDemo)
+spacemachine_enable_clang_tidy(SpaceMachineDemo)
+spacemachine_enable_cppcheck(SpaceMachineDemo)

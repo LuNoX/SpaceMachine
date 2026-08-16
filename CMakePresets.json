@@ -2,7 +2,7 @@
     "version": 6,
     "cmakeMinimumRequired": {
         "major": 3,
-        "minor": 20,
+        "minor": 21,
         "patch": 0
     },
     "configurePresets": [
@@ -12,8 +12,6 @@
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/build",
             "cacheVariables": {
-                "SPACEMACHINE_DEV_MODE": "ON",
-                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                 "CMAKE_CXX_COMPILER": "clang-cl"
             }
         },
