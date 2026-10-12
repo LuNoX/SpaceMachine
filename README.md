@@ -17,7 +17,6 @@ TODOs:
 - add lint for TODO items
 - add lint for git conflict tags
 - noexcept everything
-- add compilation pass that uses polyfills reimplementations
 - add vcpkg and conan distribution
 - add release tarball to gh actions
 - add maximum confirmed version to cmake

@@ -15,5 +15,6 @@ add_subdirectory(checkindividualheadercompilation)
 add_subdirectory(assertodr)
 add_subdirectory(checkincludes)
 add_subdirectory(demo)
+add_subdirectory(checkpolyfills)
 
 add_dependencies(SpaceMachineDemo ${check_targets})
