@@ -26,8 +26,12 @@ function (spacemachine_require_header_stubs)
 endfunction ()
 
 function (spacemachine_collect_headers out_headers)
-    file(GLOB_RECURSE headers CONFIGURE_DEPENDS
-         ${PROJECT_SOURCE_DIR}/include/*.hpp
+    file(
+        GLOB_RECURSE
+        headers
+        CONFIGURE_DEPENDS
+        ${PROJECT_SOURCE_DIR}/include/*.h
+        ${PROJECT_SOURCE_DIR}/include/*.hpp
     )
     set(${out_headers} ${headers} PARENT_SCOPE)
 endfunction ()
