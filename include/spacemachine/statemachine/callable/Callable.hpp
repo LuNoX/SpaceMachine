@@ -12,16 +12,15 @@ template<typename Fn>
 struct Callable {
     Fn m_callable;
 
-    template<typename F = Fn,
-             typename = polyfill::enable_if_t<polyfill::is_invocable_v<F>>>
-    auto operator()() noexcept(noexcept(m_callable())) -> decltype(m_callable())
+    // Deduced, so an uncallable Fn only fails once called. This lets the
+    // static_asserts in Work and Condition report it first.
+    decltype(auto) operator()() noexcept(noexcept(m_callable()))
     { return m_callable(); }
 
     Callable() = delete;
     template<typename F = Fn,
              typename = polyfill::enable_if_t<
                      !traits::is_self_constructing_v<Callable, F>
-                     && polyfill::is_invocable_v<F>
                      && polyfill::is_constructible_v<Fn, F>>>
     explicit Callable(F&& callable) noexcept(
             polyfill::is_nothrow_constructible_v<Fn, F&&>)

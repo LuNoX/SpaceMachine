@@ -37,7 +37,8 @@ struct Transition {
 };
 
 template<typename ToStateID, typename Fn,
-         polyfill::enable_if_t<traits::is_valid_condition_v<Fn>, int> = 0>
+         polyfill::enable_if_t<
+                 traits::is_valid_condition_v<polyfill::decay_t<Fn>>, int> = 0>
 [[nodiscard]] Transition<ToStateID, polyfill::decay_t<Fn>>
 MakeTransition(Fn&& shouldTrigger)
 {
@@ -46,10 +47,11 @@ MakeTransition(Fn&& shouldTrigger)
 }
 
 template<typename, typename Fn,
-         polyfill::enable_if_t<!traits::is_valid_condition_v<Fn>, int> = 0>
+         polyfill::enable_if_t<
+                 !traits::is_valid_condition_v<polyfill::decay_t<Fn>>, int> = 0>
 auto MakeTransition(Fn&& /*shouldTrigger*/)
 {
-    static_assert(traits::is_valid_condition_v<Fn>,
+    static_assert(traits::is_valid_condition_v<polyfill::decay_t<Fn>>,
                   "Condition must be callable with zero arguments and "
                   "return bool!");
 }

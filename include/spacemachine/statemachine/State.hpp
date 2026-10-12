@@ -55,7 +55,8 @@ struct State {
 };
 
 template<typename StateID, typename Fn, typename... Transitions,
-         polyfill::enable_if_t<traits::is_valid_work_v<Fn>, int> = 0>
+         polyfill::enable_if_t<traits::is_valid_work_v<polyfill::decay_t<Fn>>,
+                               int> = 0>
 [[nodiscard]] State<StateID, polyfill::decay_t<Fn>,
                     polyfill::decay_t<Transitions>...>
 MakeState(Fn&& work, Transitions&&... transitions)
@@ -67,10 +68,11 @@ MakeState(Fn&& work, Transitions&&... transitions)
 }
 
 template<typename, typename Fn, typename... Transitions,
-         polyfill::enable_if_t<!traits::is_valid_work_v<Fn>, int> = 0>
+         polyfill::enable_if_t<!traits::is_valid_work_v<polyfill::decay_t<Fn>>,
+                               int> = 0>
 auto MakeState(Fn&& /*work*/, Transitions&&... /*transitions*/)
 {
-    static_assert(traits::is_valid_work_v<Fn>,
+    static_assert(traits::is_valid_work_v<polyfill::decay_t<Fn>>,
                   "Work must be callable with zero arguments!");
 }
 

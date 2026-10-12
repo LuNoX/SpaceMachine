@@ -4,9 +4,10 @@
 #include "spacemachine/statemachine/callable/Callable.hpp"
 
 namespace spacemachine::statemachine::traits {
+// Callable invokes its stored Fn as an lvalue, so check Fn& rather than Fn.
 template<typename Fn>
-constexpr bool is_valid_work_v = polyfill::is_invocable_v<Fn>;
-}
+constexpr bool is_valid_work_v = polyfill::is_invocable_v<Fn&>;
+} // namespace spacemachine::statemachine::traits
 
 namespace spacemachine::statemachine::callable {
 

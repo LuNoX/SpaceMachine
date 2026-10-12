@@ -5,10 +5,11 @@
 
 namespace spacemachine::statemachine::traits {
 
+// Callable invokes its stored Fn as an lvalue, so check Fn& rather than Fn.
 template<typename Fn>
-constexpr bool is_valid_condition_v = polyfill::is_invocable_r_v<bool, Fn>;
+constexpr bool is_valid_condition_v = polyfill::is_invocable_r_v<bool, Fn&>;
 
-}
+} // namespace spacemachine::statemachine::traits
 
 namespace spacemachine::statemachine::callable {
 
