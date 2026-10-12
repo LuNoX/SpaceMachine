@@ -4,6 +4,8 @@ include(SpaceMachineHeaderStubs)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+# Report links to missing targets at configure time instead of link time.
+set(CMAKE_LINK_LIBRARIES_ONLY_TARGETS ON)
 spacemachine_link_compile_commands()
 
 spacemachine_collect_headers(SPACEMACHINE_HEADERS)

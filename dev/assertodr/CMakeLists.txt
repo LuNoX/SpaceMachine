@@ -5,16 +5,6 @@ include(SpaceMachineWarnings)
 
 spacemachine_require_header_stubs()
 
-if (NOT TARGET SpaceMachineCheckIndividualHeaderCompilation)
-    message(
-        FATAL_ERROR
-            "SpaceMachineAssertOneDefinitionRule needs "
-            "SpaceMachineCheckIndividualHeaderCompilation for its first "
-            "translation unit. Its directory must be added before this one in "
-            "dev/CMakeLists.txt."
-    )
-endif ()
-
 file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/main.cpp
      CONTENT "int main() { return 0; }\n"
 )
