@@ -11,7 +11,7 @@ TODOs:
 - add benchmarks
 - add polyfill presets for common embedded standard libraries
 - add automatic copyright attributions (created by, last edited) on commit
-- add launch.json
+
 - add compiler explorer API calls to ensure compliance
 - add actual loop implementation
 - add lint for TODO items
