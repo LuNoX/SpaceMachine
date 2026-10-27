@@ -75,7 +75,7 @@
 - [ ] add compiler explorer API calls to ensure compliance
 - [ ] add maximum confirmed version to cmake
 - [ ] add validation for c++ 20+
-- [ ] move the Godbolt links out of COMPLIANCE.md to PORTABILITY.md
+- [x] move the Godbolt links out of COMPLIANCE.md to PORTABILITY.md
 
 ## Dev tooling
 
