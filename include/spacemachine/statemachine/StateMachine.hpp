@@ -5,6 +5,7 @@
 #include "spacemachine/polyfill/type_traits.hpp"
 #include "spacemachine/polyfill/utility.hpp"
 #include "spacemachine/statemachine/State.hpp"
+#include "spacemachine/statemachine/Transition.hpp"
 #include "spacemachine/statemachine/traits/AllStatesUnique.hpp"
 #include "spacemachine/statemachine/traits/TransitionTargetsRegisteredStates.hpp" // IWYU pragma: keep
 #include "spacemachine/statemachine/typelist/TypeList.hpp"
@@ -17,9 +18,6 @@ namespace spacemachine::statemachine {
 /// declare higher-priority transitions earlier.
 template<typename InitialStateID, typename... States>
 struct StateMachine {
-    TypeList<States...> m_states;
-    polyfill::size_t m_activeStateIndex;
-
     StateMachine() = delete;
     template<typename... Ss,
              typename = polyfill::enable_if_t<
@@ -30,8 +28,7 @@ struct StateMachine {
             polyfill::conjunction_v<
                     polyfill::is_nothrow_constructible<States, Ss&&>...>)
         : m_states(polyfill::forward<Ss>(states)...),
-          m_activeStateIndex(detail::FindStateIndexImpl<InitialStateID, 0,
-                                                        States...>::value)
+          m_activeStateIndex(indexOf<InitialStateID>)
     {}
     ~StateMachine() = default;
 
@@ -42,6 +39,82 @@ struct StateMachine {
 
     void* operator new(polyfill::size_t) = delete;
     void operator delete(void*) = delete;
+
+    void Step() { StepImpl(stateIndices); }
+
+    template<typename StateID>
+    [[nodiscard]] bool IsActive() const
+    {
+        static_assert(traits::is_known_state_id_v<StateID, States...>,
+                      "State ID is not among the state machine's states!");
+        // this-> because cppcheck otherwise thinks this could be static.
+        return this->m_activeStateIndex == indexOf<StateID>;
+    }
+
+private:
+    template<typename StateID>
+    static constexpr polyfill::size_t indexOf
+            = detail::FindStateIndexImpl<StateID, 0, States...>::value;
+
+    template<polyfill::size_t Index>
+    using StateIndex = polyfill::integral_constant<polyfill::size_t, Index>;
+
+    static constexpr polyfill::make_index_sequence<sizeof...(States)>
+            stateIndices{};
+
+    template<polyfill::size_t... StateIndices>
+    void StepImpl(polyfill::index_sequence<StateIndices...> /*stateIndices*/)
+    {
+        // StepFrom can mutate m_activeStateIndex, so store it before the fold.
+        const polyfill::size_t active = m_activeStateIndex;
+        ((active == StateIndices ? StepFrom<StateIndices>() : void()), ...);
+    }
+
+    template<polyfill::size_t ActiveStateIndex>
+    void StepFrom()
+    {
+        WithNextState<ActiveStateIndex>([this](auto next) {
+            constexpr polyfill::size_t target = decltype(next)::value;
+            if constexpr (target != ActiveStateIndex) {
+                m_activeStateIndex = target;
+            }
+            detail::GetValue<target>(m_states).m_work();
+        });
+    }
+
+    template<polyfill::size_t ActiveStateIndex, typename OnNext>
+    void WithNextState(const OnNext& onNext)
+    {
+        if (!TryTransitions(onNext, detail::GetValue<ActiveStateIndex>(m_states)
+                                            .m_transitions)) {
+            onNext(StateIndex<ActiveStateIndex>{});
+        }
+    }
+
+    template<typename OnNext, polyfill::size_t... TransitionIndices,
+             typename... Transitions>
+    static bool TryTransitions(
+            const OnNext& onNext,
+            detail::TypeListImpl<polyfill::index_sequence<TransitionIndices...>,
+                                 Transitions...>& transitions)
+    {
+        return (TryTransition(onNext,
+                              detail::GetValue<TransitionIndices>(transitions))
+                || ...);
+    }
+
+    template<typename OnNext, typename ToStateID, typename ConditionCallable>
+    static bool
+    TryTransition(const OnNext& onNext,
+                  Transition<ToStateID, ConditionCallable>& transition)
+    {
+        if (!transition.m_shouldTrigger()) { return false; }
+        onNext(StateIndex<indexOf<ToStateID>>{});
+        return true;
+    }
+
+    TypeList<States...> m_states;
+    polyfill::size_t m_activeStateIndex;
 };
 
 template<typename InitialStateID, typename... States,
