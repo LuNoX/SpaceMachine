@@ -42,13 +42,23 @@ struct StateMachine {
 
     void Step() { StepImpl(stateIndices); }
 
-    template<typename StateID>
+    template<typename StateID,
+             polyfill::enable_if_t<
+                     traits::is_known_state_id_v<StateID, States...>, int> = 0>
+    [[nodiscard]] bool IsActive() const
+    {
+        // this-> because cppcheck otherwise thinks this could be static.
+        return this->m_activeStateIndex == indexOf<StateID>;
+    }
+
+    template<typename StateID,
+             polyfill::enable_if_t<
+                     !traits::is_known_state_id_v<StateID, States...>, int> = 0>
     [[nodiscard]] bool IsActive() const
     {
         static_assert(traits::is_known_state_id_v<StateID, States...>,
                       "State ID is not among the state machine's states!");
-        // this-> because cppcheck otherwise thinks this could be static.
-        return this->m_activeStateIndex == indexOf<StateID>;
+        return false;
     }
 
 private:
