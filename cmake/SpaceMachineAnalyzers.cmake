@@ -5,6 +5,8 @@ option(SPACEMACHINE_REQUIRE_DEV_TOOLS
 )
 
 function (spacemachine_report_missing_tool tool target consequence)
+    string(CONCAT consequence "${consequence}" ${ARGN})
+
     if (SPACEMACHINE_REQUIRE_DEV_TOOLS)
         message(
             FATAL_ERROR

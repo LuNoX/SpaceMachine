@@ -20,6 +20,17 @@ if (NOT SPACEMACHINE_UV_EXE)
     return()
 endif ()
 
+find_program(SPACEMACHINE_CLANGD_EXE NAMES clangd)
+
+if (NOT SPACEMACHINE_CLANGD_EXE)
+    spacemachine_report_missing_tool(
+        clangd SpaceMachineCheckIncludes
+        "clangd is required to run clangD-tidy! "
+        "clangd header include analysis will be skipped."
+    )
+    return()
+endif ()
+
 cmake_host_system_information(
     RESULT SPACEMACHINE_LINT_JOBS QUERY NUMBER_OF_LOGICAL_CORES
 )
@@ -32,8 +43,8 @@ add_custom_command(
     COMMAND
         ${SPACEMACHINE_UV_EXE} run python
         ${PROJECT_SOURCE_DIR}/tools/lint_headers.py -p ${PROJECT_BINARY_DIR} -j
-        ${SPACEMACHINE_LINT_JOBS} --color never --fail-on-severity hint
-        ${SPACEMACHINE_HEADERS}
+        ${SPACEMACHINE_LINT_JOBS} --clangd-executable ${SPACEMACHINE_CLANGD_EXE}
+        --color never --fail-on-severity hint ${SPACEMACHINE_HEADERS}
     COMMAND ${CMAKE_COMMAND} -E touch ${stamp}
     DEPENDS ${SPACEMACHINE_HEADERS}
             ${PROJECT_SOURCE_DIR}/tools/lint_headers.py
