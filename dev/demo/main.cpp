@@ -1,36 +1,52 @@
-#include <functional>
 #include <iostream>
 #include <spacemachine/SpaceMachine.hpp>
 
-// NOLINTBEGIN(readability-identifier-length)
-// Clang-tidy will warn about short identifiers, but they are readable here.
-namespace {
-struct S1 {};
-struct S2 {};
-struct S3 {};
-} // namespace
+// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
+// NOLINTBEGIN(misc-use-internal-linkage)
+// This is the README example, kept as simple as possible for readers.
+
+// State IDs are plain tag types.
+struct Off {};
+struct Firing {};
+struct Cooling {};
+// NOLINTEND(misc-use-internal-linkage)
 
 int main()
 {
     using namespace spacemachine;
-    int a = 1;
-    bool workedState1 = false;
 
-    auto s1 = MakeState<S1>([] { std::cout << "State 1:" << '\n'; },
-                            MakeTransition<S2>([&workedState1]() {
-                                if (workedState1) { return true; }
-                                workedState1 = true;
-                                return false;
-                            }));
-    auto t2 = MakeTransition<S3>([]() { return true; });
-    auto work = [&]() { std::cout << ++a << '\n'; };
-    auto s2 = MakeState<S2>(std::ref(work), t2);
-    auto s3 = MakeState<S3>(std::ref(work), t2);
+    bool fireCommanded = true;
+    int temperature = 0;
+    auto work = [&](const char* state, int change) {
+        temperature += change;
+        std::cout << state << ", temperature " << temperature << '\n';
+    };
 
-    auto sm = MakeStateMachine<S1>(s1, s2, s3);
-    for (int step = 0; step < 3; ++step) { sm.Step(); }
+    // Declare transitions.
+    auto ignite = MakeTransition<Firing>([&] { return fireCommanded; });
+    auto overheat = MakeTransition<Cooling>([&] { return temperature >= 100; });
+    auto shutDown = MakeTransition<Off>([&] { return !fireCommanded; });
 
+    // Declare states.
+    auto firing = MakeState<Firing>(
+            [&] { work("Firing", 50); },
+            // Transitions are checked in declaration order, so overheat wins.
+            overheat, shutDown);
+    auto cooling = MakeState<Cooling>(
+            [&] { work("Cooling", -25); },
+            // Transitions can also be declared inline.
+            MakeTransition<Off>([&] { return temperature <= 0; }));
+
+    // Declare the state machine.
+    auto thruster = MakeStateMachine<Off>(
+            // Just like transitions, states can also be declared inline.
+            MakeState<Off>([&] { work("Off", 0); }, ignite), firing, cooling);
+
+    for (int step = 0; step < 7; ++step) { thruster.Step(); }
+
+    std::cout << "\nThruster is off?: " << std::boolalpha
+              << thruster.IsActive<Off>() << '\n';
     return 0;
 }
 
-// NOLINTEND(readability-identifier-length)
+// NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)

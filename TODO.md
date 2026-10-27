@@ -19,7 +19,6 @@
 - add benchmarks
 - add polyfill presets for common embedded standard libraries
 - add automatic copyright attributions (created by, last edited) on commit
-
 - add compiler explorer API calls to ensure compliance
 - add codegen checks via compiler explorer, asserting StateMachine::Step()
   compiles to one bounds check plus a jump table, inlines all work and
@@ -27,12 +26,16 @@
   dispatch
 - add lint for TODO items
 - add lint for git conflict tags
+- add check that dev/demo/main.cpp matches the README example, minus NOLINTs
 - noexcept everything
     - StateMachine::Step() should be noexcept exactly when all work and
       conditions are (needs is_nothrow_invocable_v in the polyfill)
 - constexpr everything
 - [[nodiscard]] everything whose result must not be ignored
 - support states without transitions (TypeList<> cannot be constructed)
+- fix MakeStateMachine's "One or more arguments are not states!" static_assert
+    - non state arguments fail with "no type named 'ID'" and an ambiguous call
+    - other overloads' enable_if conditions instantiate traits on the argument
 - use one central StateMachine::StateIndex type for every state index, later
   the smallest unsigned type that fits the number of states
     - add integer_sequence and make_integer_sequence to the polyfill and make
@@ -65,7 +68,8 @@
       time"
 - add vcpkg and conan distribution
 - add release tarball to gh actions
+- add gh action checking for dead links in all md files, and later the docs
 - add maximum confirmed version to cmake
-- add dev setup guide, listing CMake 3.25+ as a requirement (CMakePresets.json
-  schema version 6)
 - add validation for c++ 20+
+- add DO-178C compliance
+- add MISRA C++:2023 compliance checks
