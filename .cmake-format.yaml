@@ -7,7 +7,7 @@ format:
   separate_ctrl_name_with_space: true
   separate_fn_name_with_space: false
   dangle_parens: True
-  dangle-align: 'prefix'
+  dangle_align: 'prefix'
   autosort: True
   keyword_case: 'upper'
 
