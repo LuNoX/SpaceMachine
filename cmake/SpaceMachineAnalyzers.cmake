@@ -30,9 +30,19 @@ function (spacemachine_enable_clang_tidy target)
         return()
     endif ()
 
-    set(clang_tidy_command ${SPACEMACHINE_CLANG_TIDY_EXE} --quiet
-                           --config-file=${PROJECT_SOURCE_DIR}/.clang-tidy
+    set(clang_tidy_command
+        ${SPACEMACHINE_CLANG_TIDY_EXE} --quiet
+        --config-file=${PROJECT_SOURCE_DIR}/.clang-tidy ${ARGN}
     )
+    # clang-tidy drops the /-style flags of MSVC-style compile commands unless
+    # told their driver mode, see tools/run_clang_tidy_cl.cmake.
+    if (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+        set(clang_tidy_command
+            ${CMAKE_COMMAND} -P
+            ${PROJECT_SOURCE_DIR}/tools/run_clang_tidy_cl.cmake --
+            ${clang_tidy_command}
+        )
+    endif ()
     set_target_properties(
         ${target} PROPERTIES CXX_CLANG_TIDY "${clang_tidy_command}"
     )

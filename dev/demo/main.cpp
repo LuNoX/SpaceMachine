@@ -11,6 +11,7 @@ struct Firing {};
 struct Cooling {};
 // NOLINTEND(misc-use-internal-linkage)
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 int main()
 {
     using namespace spacemachine;

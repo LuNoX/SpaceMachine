@@ -1,5 +1,6 @@
 # Check whether polyfill fallback implementations compile.
 
+include(SpaceMachineAnalyzers)
 include(SpaceMachinePolyfills)
 include(SpaceMachineWarnings)
 
@@ -53,6 +54,13 @@ target_link_libraries(
     SpaceMachineCheckPolyfillDemo PRIVATE SpaceMachinePolyfillFallbacks
 )
 spacemachine_enable_warnings(SpaceMachineCheckPolyfillDemo)
+# bugprone-forwarding-reference-overload only accepts std::enable_if as a
+# constraint, so it flags constructors constrained by the polyfill's own
+# enable_if_t. SpaceMachineDemo still runs it against std::enable_if_t.
+spacemachine_enable_clang_tidy(
+    SpaceMachineCheckPolyfillDemo
+    --checks=-bugprone-forwarding-reference-overload
+)
 
 # Keep the forced fallbacks out of compile_commands.json, so clangd and
 # SpaceMachineCheckIncludes only ever see the regular configuration.
