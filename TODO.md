@@ -73,7 +73,6 @@
 - [ ] add validation for c++ 20+
 - [ ] reword "for aerospace applications" in the README to something like "designed for use in MISRA C++:2023, DO-178C and ECSS projects" until the evidence below exists
 - [ ] move the Godbolt links out of COMPLIANCE.md to PORTABILITY.md
-- [ ] enable clang-tidy's cert-* and hicpp-* checks 
 - [ ] get the free PVS-Studio open source license (pvs-studio.com)
     - [ ] add the README mention the license requires
     - [ ] run it in CI and mention it in commits that fix its findings

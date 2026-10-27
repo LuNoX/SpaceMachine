@@ -2,7 +2,9 @@
 Checks: >
   clang-analyzer-*,
   bugprone-*,
+  cert-*,
   cppcoreguidelines-*,
+  hicpp-*,
   performance-*,
   portability-*,
   modernize-*,
