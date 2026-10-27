@@ -71,6 +71,38 @@
 - [ ] add gh action checking for dead links in all md files, and later the docs
 - [ ] add maximum confirmed version to cmake
 - [ ] add validation for c++ 20+
-- [ ] add DO-178C compliance
-- [ ] add MISRA C++:2023 compliance checks
+- [ ] reword "for aerospace applications" in the README to something like "designed for use in MISRA C++:2023, DO-178C and ECSS projects" until the evidence below exists
+- [ ] move the Godbolt links out of COMPLIANCE.md to PORTABILITY.md
+- [ ] enable clang-tidy's cert-* and hicpp-* checks 
+- [ ] get the free PVS-Studio open source license (pvs-studio.com)
+    - [ ] add the README mention the license requires
+    - [ ] run it in CI and mention it in commits that fix its findings
+    - [ ] renew it yearly
+- [ ] add MISRA C++:2023 compliance, self-declared following MISRA Compliance:2020
+    - [ ] read MISRA Compliance:2020 (free from misra.org.uk)
+    - [ ] buy the MISRA C++:2023 PDF (£15, single user license, misra.org.uk)
+    - [ ] add docs/misra/ with a Guideline Enforcement Plan (each rule enforced by clang-tidy, cppcheck, a compiler warning, PVS-Studio or review), a Guideline Re-categorization Plan, deviation records and a compliance summary per release
+    - [ ] only use rule numbers and own wording in docs/misra/, never MISRA's copyrighted rule text
+    - [ ] scope the claim to the library headers, C++17, the std and polyfill configurations and the compilers in CI
+    - [ ] add deviations for the comma fold in StepImpl and the || fold in TryTransitions, keeping Step()'s design
+    - [ ] fix discarded work results through "require work to return exactly void"
+    - [ ] add a checklist for the review enforced rules to the PR template
+    - [ ] state "MISRA C++:2023 compliant, see docs/misra" in the README
+- [ ] attach a reuse evidence package to every release, so DO-178C, ECSS and NASA projects can reuse it instead of redoing it
+    - [ ] read ECSS-Q-HB-80-01A (reuse of existing software, free at ecss.nl) and shape the package to answer it
+    - [ ] map every ECSS-E-ST-40C Rev.1 and ECSS-Q-ST-80C Rev.2 requirement that applies to reused software to its evidence, or mark it as the integrator's responsibility
+    - [ ] do the same for NPR 7150.2D and NASA-STD-8739.8B, including their off the shelf and open source software requirements
+    - [ ] lay the package out like an FAA AC 20-148 reusable software component data package, without applying for acceptance
+    - [ ] turn the Step() behaviours under "add tests" into requirements with IDs in StrictDoc
+    - [ ] trace every test to a requirement ID
+    - [ ] add negative compilation tests for every static_assert, checking its message
+    - [ ] measure MC/DC coverage with clang's -fcoverage-mcdc and reach 100%
+    - [ ] also run the codegen checks on pinned local compilers, since Compiler Explorer output doesn't count as evidence
+    - [ ] add gh actions CI with pinned tool versions and attach all reports to each release
+- [ ] add a DO-178C objective mapping once aviation users show up or ask for it
+    - [ ] buy ED-12C (same text as DO-178C, €250 from eshop.eurocae.net instead of $525 from RTCA)
+    - [ ] buy DO-332 ($258 from RTCA, check whether EUROCAE's ED-217 is cheaper)
+    - [ ] map every Annex A objective to a repo artifact, or mark it as the integrator's responsibility
+    - [ ] justify the per instantiation coverage and the codegen checks with DO-332's template and inlining guidance
+- [ ] only if a user wants credit for the MISRA tool results without rerunning them, buy DO-330 ($258) and write TQL-5 tool qualification data
 - [ ] add generated docs hosted on github pages
