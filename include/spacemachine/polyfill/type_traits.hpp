@@ -3,9 +3,9 @@
 
 #if __has_include(<type_traits>)                                               \
         && !defined(SPACEMACHINE_POLYFILL_NO_STD_TYPE_TRAITS)
-#include <type_traits>
+#include <type_traits> // IWYU pragma: export
 #else
-#include "spacemachine/polyfill/detail/type_traits.hpp"
+#include "spacemachine/polyfill/detail/type_traits.hpp" // IWYU pragma: export
 #endif
 
 namespace spacemachine::polyfill {

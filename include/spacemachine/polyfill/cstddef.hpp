@@ -2,7 +2,7 @@
 #define SPACEMACHINE_POLYFILL_CSTDDEF_HPP
 
 #if __has_include(<cstddef>) && !defined(SPACEMACHINE_POLYFILL_NO_STD_CSTDDEF)
-#include <cstddef>
+#include <cstddef> // IWYU pragma: export
 #endif
 
 namespace spacemachine::polyfill {

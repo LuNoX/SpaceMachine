@@ -3,9 +3,9 @@
 
 #if __has_include(<utility>)                                                   \
         && !defined(SPACEMACHINE_POLYFILL_NO_STD_UTILITY)
-#include <utility>
+#include <utility> // IWYU pragma: export
 #else
-#include "spacemachine/polyfill/detail/utility.hpp"
+#include "spacemachine/polyfill/detail/utility.hpp" // IWYU pragma: export
 #endif
 
 namespace spacemachine::polyfill {
