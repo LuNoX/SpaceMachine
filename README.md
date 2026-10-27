@@ -1,6 +1,6 @@
 # SpaceMachine
 
-A header only, aerospace grade, high performance, zero runtime cost, finite state machine for C++ 17 and newer.
+A C++ 17 and newer, header only, high performance, zero runtime cost, finite state machine designed for aerospace applications. 
 
 ## Status
 
