@@ -73,3 +73,4 @@
 - [ ] add validation for c++ 20+
 - [ ] add DO-178C compliance
 - [ ] add MISRA C++:2023 compliance checks
+- [ ] add generated docs hosted on github pages
